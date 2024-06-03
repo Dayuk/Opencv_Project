@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 import cv2
 import torch
+import config
 
 #.py file import
 from image_processing_utils import grayscale, canny, gaussian_blur, region_of_interest, draw_fit_line, hough_lines, weighted_img, get_fitline
@@ -154,7 +155,7 @@ class WeatherThread(QThread):
             if self.update:
                 adress = self.my_app.Weather_Frame.Line_Edit_Auto_Adress.text()
             else:
-                key = "83a3388f6fbf7d02001e6ec90ff31562"
+                key = config.IPSTACK_KEY
                 send_url = 'http://api.ipstack.com/check?access_key=' + key
                 r = requests.get(send_url)
                 j = json.loads(r.text)
@@ -188,7 +189,7 @@ class WeatherThread(QThread):
             nx_ny = nx_ny.values.tolist()
             self.nx_ny = nx_ny[0]
 
-            keys = 'K/cNvfRxMOAp3FabzorD5fiL8qm17xTCSbi4FMXRMDImLFizFEUvi13VBV/2em83vf1aZgCczE+LCetrTbkhCg=='
+            keys = config.WEATHER_API_KEY
             self.url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst'
             self.params = {'serviceKey': keys,
                         'pageNo': '1',
