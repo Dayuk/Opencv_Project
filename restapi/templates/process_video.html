@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>비디오 처리</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: white;
+            padding: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin-top: 5px;
+        }
+        .container {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        #processedImage {
+            display: none; /* 이미지를 기본적으로 숨김 */
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>비디오 처리</h1>
+        <form action="/process_video_upload/" method="post" enctype="multipart/form-data">
+            <label for="videoFile">비디오 파일:</label><br>
+            <input type="file" id="videoFile" name="videoFile"><br>
+            <button type="submit">파일 업로드</button>
+        </form>
+
+        <img id="processedImage" src="" alt="Processed Image">
+
+        <script>
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(form);
+                fetch('/process_video_upload/', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const image = document.getElementById('processedImage');
+                    image.src = data.imageUrl; // 서버에서 처리된 이미지 URL을 받아옴
+                    image.style.display = 'block'; // 이미지를 보여줌
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        </script>
+    </div>
+</body>
+</html>

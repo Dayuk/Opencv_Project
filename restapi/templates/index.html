@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>REST API</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        .auth-container {
+            display: none; /* 기본적으로 숨김 처리 */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .button, .login-button, .close-button {
+            margin: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button:hover, .login-button:hover, .close-button:hover {
+            background-color: #ccc;
+        }
+        .login-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .close-button {
+            display: none; /* 기본적으로 숨김 처리 */
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="logo">
+        <img src="/image/logo.png" alt="로고">
+    </a>
+    <button class="login-button" onclick="toggleLogin()">로그인</button>
+    <div class="auth-container">
+        <h2>로그인</h2>
+        <div class="g-signin2" data-onsuccess="onSignIn" data-clientid="{{ google_client_id }}"></div>
+        <button class="button" onclick="githubLogin()">GitHub 로그인</button>
+        <button class="close-button" onclick="toggleLogin()">닫기</button>
+    </div>
+    <script>
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId());
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail());
+            // 이 정보를 서버로 전송하여 사용자를 인증하거나 사용자 세션을 생성할 수 있습니다.
+        }
+
+        function githubLogin() {
+            window.location.href = 'https://github.com/login/oauth/authorize?client_id=YOUR_GITHUB_CLIENT_ID&scope=user';
+        }
+
+        function toggleLogin() {
+            var container = document.querySelector('.auth-container');
+            var closeButton = document.querySelector('.close-button');
+            var isDisplayed = container.style.display === 'flex';
+            container.style.display = isDisplayed ? 'none' : 'flex';
+            closeButton.style.display = isDisplayed ? 'none' : 'block'; // 닫기 버튼의 표시 상태를 조정
+        }
+    </script>
+</body>
+</html>
