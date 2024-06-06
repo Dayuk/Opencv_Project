@@ -5,79 +5,209 @@
     <title>REST API</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta name="google-signin-client_id" content="2797456721-6k74b7n5ou9m96f3ubtbl0acnc8ejvb6.apps.googleusercontent.com">
     <style>
         body {
             font-family: 'Noto Sans KR', sans-serif;
+            background-color: #383838;
+            color: #D3D3D3;
             margin: 0;
             padding: 0;
+            padding-top: 70px; /* 헤더의 높이만큼 상단에 여백을 추가 */
+            display: flex;
+            height: 100vh;
+        }
+        header {
+            background-color: #28A745;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%; /* 전체 너비를 차지하도록 설정 */
+            position: fixed; /* 헤더를 상단에 고정 */
+            top: 0; /* 상단에서 0px의 위치에 고정 */
+            z-index: 2000; /* 다른 요소들 위에 표시되도록 z-index 설정 */
+        }
+        .sidebar {
+            width: 15%;
+            border-right: 1px solid #28A745;
+            box-shadow: 0 4px 6px rgba(0,0,0,1);
+            height: 100%;
+            overflow-y: auto;
+        }
+        .content {
+            flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
+            overflow-y: auto; /* 내용이 많을 경우 스크롤 */
         }
-        .logo {
-            position: absolute;
-            top: 10px;
-            left: 10px;
+        .api-list {
+            list-style: none;
+            padding: 0;
         }
-        .auth-container {
-            display: none; /* 기본적으로 숨김 처리 */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .button, .login-button, .close-button {
-            margin: 10px;
-            padding: 10px 20px;
-            cursor: pointer;
+        .api-list li a {
+            color: #D3D3D3;
+            padding: 10px; /* 상단, 하단, 좌우 간격을 10px로 설정 */
+            text-decoration: none;
             transition: background-color 0.3s;
+            display: block; /* 링크를 블록 요소로 만들어 너비 전체를 차지하도록 함 */
+            width: 100%; /* 부모 요소의 너비에 맞춤 */
         }
-        .button:hover, .login-button:hover, .close-button:hover {
-            background-color: #ccc;
+        .api-list li a.active, .api-list li a:hover {
+            background-color: #28A745; /* 활성화 및 호버 상태의 배경색 */
+            color: #fff; /* 활성화 및 호버 상태의 텍스트 색상 */
         }
         .login-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            position: fixed; /* 버튼을 고정 위치에 설정 */
+            top: 20px; /* 상단에서 10px 떨어진 위치에 배치 */
+            right: 20px; /* 오른쪽에서 20px 떨어진 위치에 배치 */
+            background-color: #28A745;
+            color: #fff;
+            border: none;
+            font-weight: bold;
         }
-        .close-button {
-            display: none; /* 기본적으로 숨김 처리 */
+        .login-button:hover {
+            color: #383838;
+            font-weight: bold;
+        }
+        .login-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #28A745;
+            color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,1);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;    
+        }
+        .login-container h2 {
+            margin-top: 20px; /* h2 태그 상단 여백 추가 */
+            margin-bottom: 20px; 
+        }
+        .login-container button {
+            margin-bottom: 20px; /* 모든 버튼 하단 여백 추가 */
+        }
+        .g_id_signin{
+            margin-bottom: 20px; /* 모든 버튼 하단 여백 추가 */
+        }
+        .container {
+            display: flex;  /* Flexbox를 활성화 */
+            height: 80%;   /* 필요에 따라 높이 조정 */
+            overflow-y: auto; /* 내용이 많을 경우 스크롤 */
+            margin-top: 70px; /* header의 높이만큼 상단 여백 추가 */
+        }
+        .logo img {
+            height: 50px;
+            transition: opacity 0.1s ease-in-out;
+        }
+        .logo img.fade {
+            opacity: 0;
         }
     </style>
 </head>
 <body>
-    <a href="/" class="logo">
-        <img src="/image/logo.png" alt="로고">
-    </a>
-    <button class="login-button" onclick="toggleLogin()">로그인</button>
-    <div class="auth-container">
-        <h2>로그인</h2>
-        <div class="g-signin2" data-onsuccess="onSignIn" data-clientid="{{ google_client_id }}"></div>
+    <header>
+        <div class="logo">
+            <a href="/">
+                <img src="/static/image/REST API-logo-white.png" alt="로고" class="logo-image" style="height: 50px;">
+            </a>
+        </div>
+        <button class="login-button" onclick="toggleLogin()">Login</button>
+    </header>
+    <div class="sidebar">
+        <ul class="api-list">
+            <li><a href="/process_video" class="process_video">차선 및 차량 인식</a></li>
+            <li><a href="/weather" class="weather">날씨 검색</a></li>
+        </ul>
+    </div>
+    <div class="login-container">
+        <h2>Login</h2>
+        <div id="g_id_onload"
+             data-client_id="2797456721-6k74b7n5ou9m96f3ubtbl0acnc8ejvb6.apps.googleusercontent.com"
+             data-login_uri="https://127.0.0.1:8000/"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="sign_in_with"
+             data-shape="rectangular"
+             data-logo_alignment="left">
+        </div>
         <button class="button" onclick="githubLogin()">GitHub 로그인</button>
         <button class="close-button" onclick="toggleLogin()">닫기</button>
     </div>
+    <div class="container">
+        <div class="content" id="content">
+            <!-- AJAX로 로드된 내용이 여기에 표시됩니다 -->
+        </div>
+    </div>
     <script>
-        function onSignIn(googleUser) {
-            var profile = googleUser.getBasicProfile();
-            console.log('ID: ' + profile.getId());
-            console.log('Name: ' + profile.getName());
-            console.log('Image URL: ' + profile.getImageUrl());
-            console.log('Email: ' + profile.getEmail());
-            // 이 정보를 서버로 전송하여 사용자를 인증하거나 사용자 세션을 생성할 수 있습니다.
-        }
-
-        function githubLogin() {
-            window.location.href = 'https://github.com/login/oauth/authorize?client_id=YOUR_GITHUB_CLIENT_ID&scope=user';
-        }
-
         function toggleLogin() {
-            var container = document.querySelector('.auth-container');
-            var closeButton = document.querySelector('.close-button');
+            var container = document.querySelector('.login-container');
             var isDisplayed = container.style.display === 'flex';
             container.style.display = isDisplayed ? 'none' : 'flex';
-            closeButton.style.display = isDisplayed ? 'none' : 'block'; // 닫기 버튼의 표시 상태를 조정
+        }
+    </script>
+    <script>
+        $(document).ready(function() {
+            $(".process_video, .weather").click(function(event) {
+                event.preventDefault();  // 기본 링크 동작 방지
+                var url = $(this).attr('href');
+                var iframe = document.createElement('iframe');
+                iframe.style.width = "100%";
+                iframe.style.height = "100%";
+                iframe.style.border = "none";
+                iframe.src = url;
+
+                var contentDiv = document.getElementById('content');
+                contentDiv.innerHTML = '';  // 기존 내용을 비우고
+                contentDiv.appendChild(iframe);  // iframe을 추가
+
+                // 모든 링크에서 'active' 클래스 제거
+                $('.api-list li a').removeClass('active');
+                // 클릭된 링크에 'active' 클래스 추가
+                $(this).addClass('active');
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoImage = document.querySelector('.logo img');
+            const originalSrc = logoImage.src;
+            const hoverSrc = '/static/image/logo.png';
+
+            logoImage.addEventListener('mouseenter', function() {
+                logoImage.classList.add('fade');
+                setTimeout(() => {
+                    logoImage.src = hoverSrc;
+                    logoImage.classList.remove('fade');
+                }, 100); // 0.2초 후 이미지 소스 변경
+            });
+
+            logoImage.addEventListener('mouseleave', function() {
+                logoImage.classList.add('fade');
+                setTimeout(() => {
+                    logoImage.src = originalSrc;
+                    logoImage.classList.remove('fade');
+                }, 200); // 0.2초 후 원래 이미지로 복원
+            });
+        });
+    </script>
+    <script>
+        function githubLogin() {
+            // GitHub OAuth 로그인 페이지로 리다이렉트
+            window.location.href = "https://github.com/login/oauth/authorize?client_id=Ov23liCurHSMLwdE3VDt&scope=user";
         }
     </script>
 </body>

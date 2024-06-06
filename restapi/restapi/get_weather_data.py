@@ -4,7 +4,7 @@ import xmltodict
 import requests
 import json
 
-from .config import IPSTACK_KEY, WEATHER_API_KEY
+from django.conf import settings
 
 def get_weather_data(adress, update):
     try:
@@ -32,7 +32,7 @@ def get_weather_data(adress, update):
         if update:
             adress = adress
         else:
-            key = IPSTACK_KEY
+            key = settings.IPSTACK_KEY
             send_url = 'http://api.ipstack.com/check?access_key=' + key
             r = requests.get(send_url)
             j = json.loads(r.text)
@@ -66,7 +66,7 @@ def get_weather_data(adress, update):
         nx_ny = nx_ny.values.tolist()
         nx_ny = nx_ny[0]
 
-        keys = WEATHER_API_KEY
+        keys = settings.WEATHER_API_KEY
         url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst'
         params = {'serviceKey': keys,
                     'pageNo': '1',

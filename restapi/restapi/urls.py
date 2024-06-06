@@ -1,5 +1,7 @@
 from django.urls import path, include
 from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 
 from .views import index, process_video, WeatherAPIView, ProcessVideoURL, ProcessVideoUpload
 
@@ -14,3 +16,5 @@ urlpatterns = [
     path('process_video_upload/', ProcessVideoUpload.as_view(), name='process_video_upload'),
     path('weather/', WeatherAPIView.as_view(), name='weather'),
 ]
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

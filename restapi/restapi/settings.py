@@ -1,7 +1,9 @@
+import json
 from pathlib import Path
 import warnings
 from django.utils.deprecation import RemovedInDjango50Warning
 import mimetypes
+import os
 
 mimetypes.add_type("text/css", ".css", True)
 
@@ -37,17 +39,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'sslserver',
+
     "rest_framework",
-    "rest_framework_simplejwt",
+    "rest_framework.authtoken",
 
     "django.contrib.sites",
-    "rest_framework.authtoken",
     "dj_rest_auth",
     "dj_rest_auth.registration",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google", # 구글 소셜
+    'allauth.socialaccount.providers.github',
 ]
 
 MIDDLEWARE = [
@@ -115,6 +119,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # Django 기본 인증 백엔드
+    'allauth.account.auth_backends.AuthenticationBackend',  # django-allauth 인증 백엔드
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -123,11 +131,15 @@ LANGUAGE_CODE = 'ko-kr'
 
 TIME_ZONE = 'Asia/Seoul'
 
+SITE_ID = 1
+
 USE_I18N = True
 
 USE_L10N = True
 
 USE_TZ = True
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'  # 같은 출처의 도메인에서만 <iframe> 내 로딩을 허용
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -137,13 +149,22 @@ STATIC_URL = 'static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
+SESSION_COOKIE_SAMESITE = 'Lax'  # 현재 도메인과 같은 도메인에서만 쿠키를 전송
+CSRF_COOKIE_SAMESITE = 'Lax'     # 현재 도메인과 같은 도메인에서만 쿠키를 전송
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SITE_ID = 1
+# config.json 파일 경로 설정
+BASE_DIR = Path(__file__).resolve().parent.parent
+config_path = BASE_DIR / 'restapi/config.json'
 
-REST_USE_JWT = True
+# config.json 파일 로드
+with open(config_path, 'r') as file:
+    config = json.load(file)
 
-ACCOUNT_USER_MODEL_USERNAME_FIELD = "username" # 유저네임필드 이름
-ACCOUNT_EMAIL_REQUIRED = True # 이메일 사용여부
-ACCOUNT_USERNAME_REQUIRED = True # 유저네임 사용여부
-ACCOUNT_AUTHENTICATION_METHOD = "email" # 인증 필드 메소드
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'),]
+
+IPSTACK_KEY = config['IPSTACK_KEY']
+WEATHER_API_KEY = config['WEATHER_API_KEY']

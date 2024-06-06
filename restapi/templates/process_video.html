@@ -4,34 +4,22 @@
     <meta charset="UTF-8">
     <title>비디오 처리</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: black;
-            color: white;
-            padding: 20px;
-        }
         form {
             margin-bottom: 20px;
+            color: #D3D3D3;
         }
         input, button {
             padding: 10px;
             margin-top: 5px;
         }
-        .container {
-            background-color: #333;
-            padding: 20px;
-            border-radius: 8px;
-        }
         #processedImage {
             display: none; /* 이미지를 기본적으로 숨김 */
-            max-width: 100%;
             height: auto;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>비디오 처리</h1>
+    <div class="video_container">
         <form action="/process_video_upload/" method="post" enctype="multipart/form-data">
             <label for="videoFile">비디오 파일:</label><br>
             <input type="file" id="videoFile" name="videoFile"><br>

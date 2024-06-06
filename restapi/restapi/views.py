@@ -10,10 +10,10 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.http import HttpResponse, JsonResponse
 from allauth.socialaccount.models import SocialApp
+from django.conf import settings
 
 from .process_video import process_video
 from .get_weather_data import get_weather_data
-
 
 class WeatherAPIView(APIView):
     def get(self, request):
@@ -70,8 +70,4 @@ def process_video(request):
     return render(request, 'process_video.html')
 
 def index(request):
-    google_app = SocialApp.objects.get(provider='google')
-    context = {
-        'google_client_id': google_app.client_id,
-    }
-    return render(request, 'index.html', context)
+    return render(request, 'index.html')
