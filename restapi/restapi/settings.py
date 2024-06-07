@@ -39,19 +39,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'sslserver',
-
     "rest_framework",
     "rest_framework.authtoken",
 
-    "django.contrib.sites",
-    "dj_rest_auth",
-    "dj_rest_auth.registration",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.google", # 구글 소셜
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
+    "restapi",
 ]
 
 MIDDLEWARE = [
@@ -63,6 +60,14 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'https://crane-careful-prawn.ngrok-free.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
 
 ROOT_URLCONF = 'restapi.urls'
@@ -94,12 +99,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_database',
         'USER': 'root',
-        'PASSWORD': 'rlaqjatn256^',
+        'PASSWORD': 'Rlaqjatn256^',
         'HOST': 'localhost',
         'PORT': '3306',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -139,7 +143,18 @@ USE_L10N = True
 
 USE_TZ = True
 
+# 이메일을 필수로 설정
+ACCOUNT_EMAIL_REQUIRED = True
+# 이메일이 유니크한지 확인
+ACCOUNT_UNIQUE_EMAIL = True
+# 사용자 이름을 필수로 설정
+ACCOUNT_USERNAME_REQUIRED = True
+
+AUTH_USER_MODEL = 'restapi.CustomUser'
+
 X_FRAME_OPTIONS = 'SAMEORIGIN'  # 같은 출처의 도메인에서만 <iframe> 내 로딩을 허용
+
+REDIRECT_URL = '/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -148,6 +163,8 @@ STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+
+ALLOWED_HOSTS = ['crane-careful-prawn.ngrok-free.app', 'localhost', '127.0.0.1']
 
 SESSION_COOKIE_SAMESITE = 'Lax'  # 현재 도메인과 같은 도메인에서만 쿠키를 전송
 CSRF_COOKIE_SAMESITE = 'Lax'     # 현재 도메인과 같은 도메인에서만 쿠키를 전송
@@ -168,3 +185,30 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'),]
 
 IPSTACK_KEY = config['IPSTACK_KEY']
 WEATHER_API_KEY = config['WEATHER_API_KEY']
+
+GOOGLE_CLIENT_ID = config['GOOGLE_CLIENT_ID']
+GOOGLE_CLIENT_SECRET = config['GOOGLE_CLIENT_SECRET']
+GOOGLE_REDIRECT_URI = config['GOOGLE_REDIRECT_URI']
+
+GH_CLIENT_ID = config['GH_CLIENT_ID']
+GH_CLIENT_SECRET = config['GH_CLIENT_SECRET']
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': GOOGLE_CLIENT_ID,
+            'secret': GOOGLE_CLIENT_SECRET,
+            'key': ''
+        }
+    },
+    'github': {
+        'APP': {
+            'client_id': GH_CLIENT_ID,
+            'secret': GH_CLIENT_SECRET,
+            'key': ''
+        }
+    }
+}
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+

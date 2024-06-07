@@ -5,9 +5,7 @@
     <title>REST API</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <meta name="google-signin-client_id" content="2797456721-6k74b7n5ou9m96f3ubtbl0acnc8ejvb6.apps.googleusercontent.com">
     <style>
         body {
             font-family: 'Noto Sans KR', sans-serif;
@@ -27,7 +25,7 @@
             align-items: center;
             width: 100%; /* 전체 너비를 차지하도록 설정 */
             position: fixed; /* 헤더를 상단에 고정 */
-            top: 0; /* 상단에서 0px의 위치에 고정 */
+            top: 0; /* 상단에서 0px 위치에 고정 */
             z-index: 2000; /* 다른 요소들 위에 표시되도록 z-index 설정 */
         }
         .sidebar {
@@ -60,8 +58,8 @@
             background-color: #28A745; /* 활성화 및 호버 상태의 배경색 */
             color: #fff; /* 활성화 및 호버 상태의 텍스트 색상 */
         }
-        .login-button {
-            position: fixed; /* 버튼을 고정 위치에 설정 */
+        .login-button_header {
+            position: fixed; /* 버튼을 고정 위에 설정 */
             top: 20px; /* 상단에서 10px 떨어진 위치에 배치 */
             right: 20px; /* 오른쪽에서 20px 떨어진 위치에 배치 */
             background-color: #28A745;
@@ -93,12 +91,6 @@
             margin-top: 20px; /* h2 태그 상단 여백 추가 */
             margin-bottom: 20px; 
         }
-        .login-container button {
-            margin-bottom: 20px; /* 모든 버튼 하단 여백 추가 */
-        }
-        .g_id_signin{
-            margin-bottom: 20px; /* 모든 버튼 하단 여백 추가 */
-        }
         .container {
             display: flex;  /* Flexbox를 활성화 */
             height: 80%;   /* 필요에 따라 높이 조정 */
@@ -112,6 +104,82 @@
         .logo img.fade {
             opacity: 0;
         }
+        .login-button {
+            background-color: #28A745;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .login-button:hover {
+            background-color: #218838;
+        }
+        .login-container .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .login-container .button img {
+            margin-right: 10px;
+            width: 30px;
+            height: 30px;
+        }
+        .login-container .button.github {
+            background-color: #333;
+            color: #fff;
+        }
+        .login-container .button.github:hover {
+            background-color: #24292e;
+        }
+        .login-container .button.google {
+            background-color: #fff;
+            color: #000;
+            border: 1px solid #ddd;
+        }
+        .login-container .button.google:hover {
+            background-color: #f1f1f1;
+        }
+        .profile-icon {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+        .profile-image {
+            width: 50px;
+            height: 50px;
+        }
+        .profile-menu {
+            display: none;
+            position: absolute;
+            margin-top: 5px;
+            right: 0;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 150px;
+            text-align: center;
+        }
+        .profile-menu a, .profile-menu p {
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+            color: #333;
+            text-decoration: none;
+        }
+        .profile-menu a:hover {
+            background-color: #f1f1f1;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +189,17 @@
                 <img src="/static/image/REST API-logo-white.png" alt="로고" class="logo-image" style="height: 50px;">
             </a>
         </div>
-        <button class="login-button" onclick="toggleLogin()">Login</button>
+        {% if user.is_authenticated %}
+            <div class="profile-icon">
+                <img src="/static/image/profile-icon.svg" alt="Profile Icon" class="profile-image">
+                <div class="profile-menu">
+                    <a href="/myapi">My API</a>
+                    <a href="{% url 'logout' %}" class="logout-button">로그아웃</a>
+                </div>
+            </div>
+        {% else %}
+            <button class="login-button_header" onclick="toggleLogin()">Login</button>
+        {% endif %}
     </header>
     <div class="sidebar">
         <ul class="api-list">
@@ -131,20 +209,15 @@
     </div>
     <div class="login-container">
         <h2>Login</h2>
-        <div id="g_id_onload"
-             data-client_id="2797456721-6k74b7n5ou9m96f3ubtbl0acnc8ejvb6.apps.googleusercontent.com"
-             data-login_uri="https://127.0.0.1:8000/"
-             data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="large"
-             data-theme="outline"
-             data-text="sign_in_with"
-             data-shape="rectangular"
-             data-logo_alignment="left">
-        </div>
-        <button class="button" onclick="githubLogin()">GitHub 로그인</button>
+        {% load socialaccount %}
+        <button class="button google" onclick="googleLogin()">
+            <img src="/static/image/google-logo.svg" alt="Google Logo">
+            Login with Google
+        </button>
+        <button class="button github" onclick="githubLogin()">
+            <img src="/static/image/github-logo.svg" alt="GitHub Logo">
+            Login with GitHub
+        </button>
         <button class="close-button" onclick="toggleLogin()">닫기</button>
     </div>
     <div class="container">
@@ -157,6 +230,24 @@
             var container = document.querySelector('.login-container');
             var isDisplayed = container.style.display === 'flex';
             container.style.display = isDisplayed ? 'none' : 'flex';
+        }
+        function googleLogin() {
+            var loginWindow_google = window.open("{% provider_login_url 'google' %}", "GoogleLogin", "width=500,height=600");
+            var timer = setInterval(function() { 
+            if(loginWindow_google.closed) {
+                clearInterval(timer);
+                window.location.reload();  // 로그인 창이 닫히면 현재 페이지를 새로고침
+            }
+        }, 500);
+        }
+        function githubLogin() {
+            var loginWindow_github = window.open("{% provider_login_url 'github' %}", "GitHubLogin", "width=500,height=600");
+            var timer = setInterval(function() { 
+            if(loginWindow_github.closed) {
+                clearInterval(timer);
+                window.location.reload();  // 로그인 창이 닫히면 현재 페이지를 새로고침
+            }
+        }, 500);
         }
     </script>
     <script>
@@ -205,10 +296,53 @@
         });
     </script>
     <script>
-        function githubLogin() {
-            // GitHub OAuth 로그인 페이지로 리다이렉트
-            window.location.href = "https://github.com/login/oauth/authorize?client_id=Ov23liCurHSMLwdE3VDt&scope=user";
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileIcon = document.querySelector('.profile-icon');
+            const profileMenu = document.querySelector('.profile-menu');
+
+            profileIcon.addEventListener('mouseenter', function() {
+                profileMenu.style.display = 'block';
+            });
+            profileIcon.addEventListener('mouseleave', function() {
+                profileMenu.style.display = 'none';
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutButton = document.querySelector('.logout-button');
+
+            logoutButton.addEventListener('click', function(e) {
+                e.preventDefault();  // 기본 이벤트 방지
+                fetch('{% url "logout" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),  // CSRF 토큰 추가
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    credentials: 'same-origin'  // 쿠키를 포함시키기 위해 필요
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/';  // 로그아웃 후 리다이렉트할 페이지
+                    }
+                }).catch(error => console.error('Error:', error));
+            });
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        });
     </script>
 </body>
 </html>
