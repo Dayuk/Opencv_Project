@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "rest_framework.authtoken",
+    "channels",
 
     'django.contrib.sites',
     'allauth',
@@ -127,6 +128,8 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # Django 기본 인증 백엔드
     'allauth.account.auth_backends.AuthenticationBackend',  # django-allauth 인증 백엔드
 )
+
+ASGI_APPLICATION = 'restapi.asgi.application'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

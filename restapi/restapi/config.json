@@ -1,5 +1,10 @@
 
 {
     "IPSTACK_KEY" : "83a3388f6fbf7d02001e6ec90ff31562",
-    "WEATHER_API_KEY" : "K/cNvfRxMOAp3FabzorD5fiL8qm17xTCSbi4FMXRMDImLFizFEUvi13VBV/2em83vf1aZgCczE+LCetrTbkhCg=="
+    "WEATHER_API_KEY" : "K/cNvfRxMOAp3FabzorD5fiL8qm17xTCSbi4FMXRMDImLFizFEUvi13VBV/2em83vf1aZgCczE+LCetrTbkhCg==",
+    "GOOGLE_CLIENT_ID" : "2797456721-6k74b7n5ou9m96f3ubtbl0acnc8ejvb6.apps.googleusercontent.com",
+    "GOOGLE_CLIENT_SECRET" : "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",
+    "GOOGLE_REDIRECT_URI" : "https://crane-careful-prawn.ngrok-free.app/accounts/google/login/callback/",
+    "GH_CLIENT_ID" : "Ov23liCurHSMLwdE3VDt",
+    "GH_CLIENT_SECRET" : "72ce9693211160d0f910c43a5ab9e47b24014e97"
 }

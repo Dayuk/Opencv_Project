@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>프로필</title>
+    <style>
+        html, body {
+            height: 100%; /* 전체 높이 설정 */
+            margin: 0;
+            padding: 0;
+            background-color: #383838;
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 수직 중앙 정렬 */
+        }
+        #closeButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28A745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        function startCountdown(seconds) {
+            var counter = seconds;
+            var interval = setInterval(() => {
+                document.getElementById('countdown').innerHTML = `이 창은 ${counter}초 후에 닫힙니다.`;
+                counter--;
+                if (counter < 0) {
+                    clearInterval(interval);
+                    window.close();
+                }
+            }, 1000);
+        }
+    </script>
+</head>
+<body onload="startCountdown(5);">
+    <div id="countdown">이 창은 5초 후에 닫힙니다.</div>
+    <header>
+        <h1>환영합니다, {{ user.username }}!</h1>
+    </header>
+    <button id="closeButton" onclick="window.close();">닫기</button>
+</body>
+</html>

@@ -1,51 +1,101 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>비디오 처리</title>
-    <style>
-        form {
-            margin-bottom: 20px;
-            color: #D3D3D3;
-        }
-        input, button {
-            padding: 10px;
-            margin-top: 5px;
-        }
-        #processedImage {
-            display: none; /* 이미지를 기본적으로 숨김 */
-            height: auto;
-        }
-    </style>
-</head>
-<body>
+{% extends "index.html" %}
+
+{% block title %}차선 및 차량 인식{% endblock %}
+
+{% block content %}
+<div class="container">
     <div class="video_container">
         <form action="/process_video_upload/" method="post" enctype="multipart/form-data">
-            <label for="videoFile">비디오 파일:</label><br>
-            <input type="file" id="videoFile" name="videoFile"><br>
+            {% csrf_token %}
+            <label for="videoFiles">비디오 파일:</label><br>
+            <input type="file" id="videoFiles" name="videoFiles" multiple><br>
+            <label for="videoUrls">YouTube 링크:</label><br>
+            <input type="text" id="videoUrls" name="videoUrls" placeholder="YouTube URL"><br>
             <button type="submit">파일 업로드</button>
         </form>
 
-        <img id="processedImage" src="" alt="Processed Image">
-
-        <script>
-            const form = document.querySelector('form');
-            form.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const formData = new FormData(form);
-                fetch('/process_video_upload/', {
-                    method: 'POST',
-                    body: formData,
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const image = document.getElementById('processedImage');
-                    image.src = data.imageUrl; // 서버에서 처리된 이미지 URL을 받아옴
-                    image.style.display = 'block'; // 이미지를 보여줌
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        </script>
     </div>
-</body>
-</html>
+    <div class="video_frame_container">
+        <div id="imageContainer1" style="display: block; height: 200px; width: 100%; overflow: hidden;"></div>
+        <div id="imageContainer2" style="display: none; height: 200px; width: 100%; overflow: hidden;"></div>
+    </div>
+</div>
+
+<!-- 로그 브라우저 섹션 추가 -->
+<div class="log_browser">
+    <div id="logMessages" style="height: 200px; overflow-y: scroll; background: #646464; padding: 10px; color: white;">
+        <!-- 로그 메시지가 여기에 표시됩니다 -->
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const uploadButton = document.querySelector('button[type="submit"]');
+        const logMessages = document.getElementById('logMessages');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            uploadButton.disabled = true;
+            const formData = new FormData(form);
+
+            const videoFilesInput = document.getElementById('videoFiles');
+            if (videoFilesInput.files.length > 0) {
+                const videoFilename = videoFilesInput.files[0].name;
+                formData.append('videoFilename', videoFilename);
+            }
+
+            fetch('/process_video_upload/', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.username && data.videoFilenames) {
+                    checkForNewImages(data.username, data.videoFilenames);
+                } else {
+                    console.error('Missing username or videoFilename in response');
+                    logMessages.innerText = '서버 응답에서 사용자 이름 또는 비디오 파일 이름이 누락되었습니다.';
+                }
+                uploadButton.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                uploadButton.disabled = false;
+                logMessages.innerText = '오류가 발생했습니다: ' + error;
+            });
+        });
+
+        function checkForNewImages(username, videoFilename) {
+            let imageIndex = 0;
+            let currentContainer = document.getElementById('imageContainer1');
+            let bufferContainer = document.getElementById('imageContainer2');
+
+            const intervalId = setInterval(() => {
+                const imagePath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_${imageIndex}.jpg?${new Date().getTime()}`;
+                const newImg = new Image();
+                newImg.onload = function() {
+                    bufferContainer.innerHTML = '';  // 버퍼 컨테이너를 비웁니다.
+                    bufferContainer.appendChild(newImg);  // 새 이미지를 버퍼 컨테이너에 추가합니다.
+                    bufferContainer.style.display = 'block';  // 버퍼 컨테이너를 보이게 합니다.
+                    currentContainer.style.display = 'none';  // 현재 컨테이너를 숨깁니다.
+
+                    // 컨테이너 역할 교체
+                    let temp = currentContainer;
+                    currentContainer = bufferContainer;
+                    bufferContainer = temp;
+
+                    imageIndex++;
+                };
+                newImg.onerror = function() {
+                    clearInterval(intervalId);
+                    currentContainer.innerHTML = '';
+                    currentContainer.style.backgroundColor = '#24292e';
+                    currentContainer.style.width = '100%';
+                    currentContainer.style.height = '500px';
+                };
+                newImg.src = imagePath;
+            }, 1000);  // 1초마다 실행
+        }
+    });
+</script>
+{% endblock %}

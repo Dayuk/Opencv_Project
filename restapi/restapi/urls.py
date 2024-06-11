@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from . import views
 from django.contrib.auth import views as auth_views
 
-from .views import index, process_video, WeatherAPIView, ProcessVideoURL, ProcessVideoUpload
+from .views import index, process_video, WeatherAPIView, ProcessVideoUpload
 
 urlpatterns = [
     path('', index, name='index'),
@@ -15,8 +15,8 @@ urlpatterns = [
     path('accounts/profile/', views.profile_view, name='profile'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
+    # 비디오 처리 관련 URL
     path('process_video/', process_video, name='process_video'),
-    path('process_video_url/', ProcessVideoURL.as_view(), name='process_video_url'),
     path('process_video_upload/', ProcessVideoUpload.as_view(), name='process_video_upload'),
     path('weather/', WeatherAPIView.as_view(), name='weather'),
 ]

@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>REST API</title>
+    <title>{% block title %}REST API{% endblock %}</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -36,11 +36,10 @@
             overflow-y: auto;
         }
         .content {
-            flex-grow: 1;
-            display: flex;
+            margin-top: 70px; /* header의 높이만큼 상단 여백 추가 */
+            width: 100%;
             justify-content: center;
             align-items: center;
-            overflow-y: auto; /* 내용이 많을 경우 스크롤 */
         }
         .api-list {
             list-style: none;
@@ -94,8 +93,6 @@
         .container {
             display: flex;  /* Flexbox를 활성화 */
             height: 80%;   /* 필요에 따라 높이 조정 */
-            overflow-y: auto; /* 내용이 많을 경우 스크롤 */
-            margin-top: 70px; /* header의 높이만큼 상단 여백 추가 */
         }
         .logo img {
             height: 50px;
@@ -177,8 +174,13 @@
             color: #333;
             text-decoration: none;
         }
-        .profile-menu a:hover {
+        .profile-menu a.active {
             background-color: #f1f1f1;
+        }
+        #imageContainer1 img, #imageContainer2 img {
+            width: 100%;
+            height: auto;
+            object-fit: contain; /* 이미지가 컨테이너에 맞게 조정되도록 설정 */
         }
     </style>
 </head>
@@ -222,7 +224,9 @@
     </div>
     <div class="container">
         <div class="content" id="content">
-            <!-- AJAX로 로드된 내용이 여기에 표시됩니다 -->
+            {% block content %}
+            <!-- 페이지별 내용이 들어갈 부분 -->
+            {% endblock %}
         </div>
     </div>
     <script>
@@ -251,28 +255,6 @@
         }
     </script>
     <script>
-        $(document).ready(function() {
-            $(".process_video, .weather").click(function(event) {
-                event.preventDefault();  // 기본 링크 동작 방지
-                var url = $(this).attr('href');
-                var iframe = document.createElement('iframe');
-                iframe.style.width = "100%";
-                iframe.style.height = "100%";
-                iframe.style.border = "none";
-                iframe.src = url;
-
-                var contentDiv = document.getElementById('content');
-                contentDiv.innerHTML = '';  // 기존 내용을 비우고
-                contentDiv.appendChild(iframe);  // iframe을 추가
-
-                // 모든 링크에서 'active' 클래스 제거
-                $('.api-list li a').removeClass('active');
-                // 클릭된 링크에 'active' 클래스 추가
-                $(this).addClass('active');
-            });
-        });
-    </script>
-    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const logoImage = document.querySelector('.logo img');
             const originalSrc = logoImage.src;
@@ -299,12 +281,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             const profileIcon = document.querySelector('.profile-icon');
             const profileMenu = document.querySelector('.profile-menu');
+            const profileLinks = document.querySelectorAll('.profile-menu a');
 
-            profileIcon.addEventListener('mouseenter', function() {
+            profileIcon.addEventListener('click', function() {
                 profileMenu.style.display = 'block';
+                profileLinks.forEach(link => {
+                    link.classList.toggle('active');  // 클릭 시 active 클래스 토글
+                });
             });
-            profileIcon.addEventListener('mouseleave', function() {
-                profileMenu.style.display = 'none';
+
+            // 메뉴 외부를 클릭하면 메뉴와 active 클래스를 숨깁니다.
+            document.addEventListener('click', function(event) {
+                if (!profileIcon.contains(event.target)) {
+                    profileMenu.style.display = 'none';
+                    profileLinks.forEach(link => {
+                        link.classList.remove('active');
+                    });
+                }
             });
         });
     </script>
