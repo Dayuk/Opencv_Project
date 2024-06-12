@@ -9,24 +9,27 @@
             {% csrf_token %}
             <label for="videoFiles">비디오 파일:</label><br>
             <input type="file" id="videoFiles" name="videoFiles" multiple><br>
-            <label for="videoUrls">YouTube 링크:</label><br>
+            <label for="videoUrl">YouTube 링크:</label><br>
             <input type="text" id="videoUrls" name="videoUrls" placeholder="YouTube URL"><br>
             <button type="submit">파일 업로드</button>
         </form>
 
     </div>
     <div class="video_frame_container">
-        <div id="imageContainer1" style="display: block; height: 200px; width: 100%; overflow: hidden;"></div>
-        <div id="imageContainer2" style="display: none; height: 200px; width: 100%; overflow: hidden;"></div>
+        <div id="imageContainer1" style="display: block; overflow: hidden;"></div>
+        <div id="imageContainer2" style="display: none; overflow: hidden;"></div>
     </div>
 </div>
 
-<!-- 로그 브라우저 섹션 추가 -->
-<div class="log_browser">
-    <div id="logMessages" style="height: 200px; overflow-y: scroll; background: #646464; padding: 10px; color: white;">
-        <!-- 로그 메시지가 여기에 표시됩니다 -->
+<!-- 프로그레스 바 -->
+<div class="process_container">
+    <!-- 로그 브라우저 섹션 추가 -->
+    <div class="log_browser">
+        <div id="logMessages" style="height: 200px; background: #646464; padding: 10px; color: white;">
+            <!-- 로그 메시가 여기에 표시됩니다 -->
+        </div>
     </div>
-
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
@@ -42,6 +45,7 @@
             if (videoFilesInput.files.length > 0) {
                 const videoFilename = videoFilesInput.files[0].name;
                 formData.append('videoFilename', videoFilename);
+                logMessages.innerText = "비디오 파일을 업로드하는 중 입니다."
             }
 
             fetch('/process_video_upload/', {
@@ -50,13 +54,15 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.username && data.videoFilenames) {
-                    checkForNewImages(data.username, data.videoFilenames);
+                console.log(data)
+                if (data.username && data.videoFilename && data.totalChunks) {
+                    logMessages.innerText = "비디오 파일을 처리하는 중 입니다."
+                    checkForNewImages(data.username, data.videoFilename, data.totalChunks);
                 } else {
-                    console.error('Missing username or videoFilename in response');
-                    logMessages.innerText = '서버 응답에서 사용자 이름 또는 비디오 파일 이름이 누락되었습니다.';
+                    console.error('Missing username, videoFilename, or totalChunks in response');
+                    logMessages.innerText = '로그인 후 이용해주세요.';
+                    uploadButton.disabled = false;
                 }
-                uploadButton.disabled = false;
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -65,15 +71,39 @@
             });
         });
 
-        function checkForNewImages(username, videoFilename) {
+        function checkForNewImages(username, videoFilename, totalChunks) {
             let imageIndex = 0;
             let currentContainer = document.getElementById('imageContainer1');
             let bufferContainer = document.getElementById('imageContainer2');
+            const roomName = `process_video_${username}`;  // roomName을 동적으로 설정합니다.
+            const chatSocket = new WebSocket(
+                'ws://' + window.location.host + '/ws/process_video/' + roomName + '/'
+            );
 
             const intervalId = setInterval(() => {
-                const imagePath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_${imageIndex}.jpg?${new Date().getTime()}`;
+                chatSocket.onmessage = function(e) {
+                    const data = JSON.parse(e.data);
+                    if (data.message === 'completed') {
+                        clearInterval(intervalId);
+                        logMessages.innerText = '영상 변환이 완료되었습니다.';
+                        const outputVideoPath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_output.mp4`;
+                        const a = document.createElement('a');
+                        a.href = outputVideoPath;
+                        a.download = `${videoFilename}_output.mp4`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        uploadButton.disabled = false;  
+                        return;
+                    }
+                }
+
+                const imagePath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_${imageIndex}.jpg`;
                 const newImg = new Image();
                 newImg.onload = function() {
+                    newImg.style.width = '100%';  // 이미지의 너비를 컨테이너의 100%로 설정
+                    newImg.style.height = 'auto';  // 이미지의 높이를 자동으로 조절
+
                     bufferContainer.innerHTML = '';  // 버퍼 컨테이너를 비웁니다.
                     bufferContainer.appendChild(newImg);  // 새 이미지를 버퍼 컨테이너에 추가합니다.
                     bufferContainer.style.display = 'block';  // 버퍼 컨테이너를 보이게 합니다.
@@ -83,19 +113,15 @@
                     let temp = currentContainer;
                     currentContainer = bufferContainer;
                     bufferContainer = temp;
-
-                    imageIndex++;
+                    imageIndex++;  // 이미지가 성공적으로 로드되었을 때만 인덱스 증가
                 };
                 newImg.onerror = function() {
-                    clearInterval(intervalId);
-                    currentContainer.innerHTML = '';
-                    currentContainer.style.backgroundColor = '#24292e';
-                    currentContainer.style.width = '100%';
-                    currentContainer.style.height = '500px';
-                };
+                    // 이미지 로드 실패 시 처리
+                }
                 newImg.src = imagePath;
-            }, 1000);  // 1초마다 실행
+            }, 2000); // 2초 간격으로 로드
         }
     });
 </script>
 {% endblock %}
+
