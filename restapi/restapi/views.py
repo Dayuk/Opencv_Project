@@ -31,17 +31,9 @@ import shutil
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-# 로거 설정
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler('video_processing_debug.log')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
 from .get_weather_data import get_weather_data
 from .video_utils import download_video_from_url
-from .image_processing_utils import grayscale, canny, gaussian_blur, region_of_interest, draw_fit_line, hough_lines, weighted_img, get_fitline
+from .image_processing_utils import region_of_interest, draw_fit_line, weighted_img, get_fitline, color_filter, dynamic_roi, dynamic_canny, dynamic_hough, grayscale, gaussian_blur, canny, hough_lines
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -102,7 +94,7 @@ class ProcessVideoUpload(View):
         completed_tasks = await asyncio.gather(*tasks)
 
         # ThreadPoolExecutor를 사용하여 비디오 프레임 처리를 별도의 스레드에서 실행합니다.
-        executor = ThreadPoolExecutor()
+        executor = ThreadPoolExecutor(max_workers=1)
         executor.submit(self.run_process_video_frames, f'static/tmp/{username}/{self.random_filename}', self.random_filename, username)
 
         # 응답을 즉시 반환합니다. 프레임 처리는 백그라운드에서 계속 진행됩니다.
@@ -145,17 +137,25 @@ class ProcessVideoUpload(View):
         try:
             logger.debug(f"Processing video frames for {filename} in directory {user_dir}")
 
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True).to(device)
-            model.eval()
+            # 모델 로딩을 한 번만 수행하고 재사용합니다.
+            if not hasattr(self, 'model'):
+                device = 'cuda' if torch.cuda.is_available() else 'cpu'
+                self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True).to(device)
+                self.model.eval()
+
+            model = self.model  # 로컬 변수에 할당
 
             reader = imageio.get_reader(f'{user_dir}/{filename}')
             fps = reader.get_meta_data()['fps']
-            writer = imageio.get_writer(f'{user_dir}/{filename}_output.mp4', fps=fps)
+            writer = imageio.get_writer(f'{user_dir}/{filename}_output.mp4', fps=60)
             image_index = 0
             for i, frame in enumerate(reader):
                 try:
-                    frame_save_path = f'{user_dir}/{filename}_{image_index}.jpg'
+                    # 프레임 사이즈 조정 로직 추가
+                    height, width = frame.shape[:2]
+                    if height >= 720 and width >= 1280:
+                        frame = cv2.resize(frame, (width * 2 // 3, height * 2 // 3))
+
                     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)  # imageio로 읽은 이미지를 cv2 처리 가능한 BGR 포맷으로 변환
                     height, width = frame.shape[:2]
                     gray_img = grayscale(frame)
@@ -179,7 +179,12 @@ class ProcessVideoUpload(View):
                     left_fit_line = get_fitline(frame, L_lines)
                     right_fit_line = get_fitline(frame, R_lines)
                     fit_line_xy = np.array([[left_fit_line[0], left_fit_line[1]], [right_fit_line[0],right_fit_line[1]], [left_fit_line[2]+15, left_fit_line[3]+15], [right_fit_line[2]-15,right_fit_line[3]-15]], np.int32)
-                    draw_fit_line(temp, fit_line_xy)
+                    try:
+                        draw_fit_line(temp, fit_line_xy)
+                    except Exception as e:
+                        logger.error(f"Error drawing fit lines: {e}", exc_info=True)
+                        # 선을 그리지 못했을 경우 로그를 남기고 계속 진행합니다.
+
                     result = weighted_img(temp, frame)
                     preds = model(frame)
                     preds = preds.pandas().xyxy[0]
@@ -189,30 +194,32 @@ class ProcessVideoUpload(View):
                             cv2.rectangle(result, (x1, y1), (x2, y2), (0, 255, 0), 2)
                             cv2.putText(result, f'car {row["confidence"]:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                     writer.append_data(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))  # 최종 결과를 RGB로 변환하여 writer에 저장
-                    if i % 30 == 0:  # 30프레임마다 한 번씩만 이미지를 저장합니다.
-                        frame_save_path = f'{user_dir}/{filename}_{image_index}.jpg'
+                    if i % 100 == 0:
+                        frame_save_path = f'{user_dir}/{filename}_{image_index}.webp'
                         cv2.imwrite(frame_save_path, cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
                         image_index += 1
                 except Exception as e:
                     logger.error(f"Error processing video {filename}: {e}", exc_info=True)
                     continue
-        except Exception as e:
-            logger.error(f"Error processing video {filename}: {e}", exc_info=True)
-            raise e
-        writer.close()
-        reader.close()
-        output_file_path = f'{user_dir}/{filename}_output.mp4'
-        
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'video_process_{username}', 
-            {
-                'type': 'video_process_message',
-                'message': 'completed'
-            }
-        )
-        clean_up_directory(user_dir, output_file_path)
-        return output_file_path
+        finally:    
+            writer.close()
+            reader.close()
+            output_file_path = f'{user_dir}/{filename}_output.mp4'
+            
+            # 비디오 처리가 완료된 후:
+            channel_layer = get_channel_layer()
+            room_group_name = f'ws/process_video/process_video_{username}/'  # WebSocket 경로 설정
+
+            # 메시지 전송
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'video_process_message',
+                    'message': 'completed'
+                }
+            )
+            clean_up_directory(user_dir, output_file_path)
+            return output_file_path
 
 async def get_username(request):
     user = await sync_to_async(get_user)(request)

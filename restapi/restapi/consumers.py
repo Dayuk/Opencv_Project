@@ -3,18 +3,21 @@ import json
 
 class VideoProcessConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # URL 경로에서 username을 추출합니다.
-        username = self.scope['url_route']['kwargs']['username']
-        self.room_group_name = f'video_process_{username}'  # room_group_name을 동적으로 설정합니다.
+        # 인증된 사용자의 username을 가져옵니다.
+        self.username = self.scope["url_route"]["kwargs"]["username"]
+        if not self.username:
+            await self.close()  # 사용자가 인증되지 않은 경우 연결을 종료합니다.
+        else:
+            self.room_group_name = 'process_video_' + self.username  # room_group_name을 동적으로 설정합니다.
 
-        # 사용자를 해당 그룹에 추가합니다.
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+            # 사용자를 해당 그룹에 추가합니다.
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
 
-        # WebSocket 연결을 수락합니다.
-        await self.accept()
+            # WebSocket 연결을 수락합니다.
+            await self.accept()
 
     async def disconnect(self, close_code):
         # 연결이 끊어지면 사용자를 그룹에서 제거합니다.

@@ -60,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 
     'corsheaders.middleware.CorsMiddleware',
@@ -127,17 +128,9 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # Django 기본 인증 백엔드
     'allauth.account.auth_backends.AuthenticationBackend',  # django-allauth 인증 백엔드
+    'channels_redis.core.RedisChannelLayer',
 )
 
-ASGI_APPLICATION = 'restapi.asgi.application'
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 8000)],
-        },
-    },
-}
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -169,7 +162,8 @@ REDIRECT_URL = '/'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -221,3 +215,13 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+ASGI_APPLICATION = 'restapi.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}

@@ -13,7 +13,6 @@
             <input type="text" id="videoUrls" name="videoUrls" placeholder="YouTube URL"><br>
             <button type="submit">파일 업로드</button>
         </form>
-
     </div>
     <div class="video_frame_container">
         <div id="imageContainer1" style="display: block; overflow: hidden;"></div>
@@ -21,9 +20,7 @@
     </div>
 </div>
 
-<!-- 프로그레스 바 -->
 <div class="process_container">
-    <!-- 로그 브라우저 섹션 추가 -->
     <div class="log_browser">
         <div id="logMessages" style="height: 200px; background: #646464; padding: 10px; color: white;">
             <!-- 로그 메시가 여기에 표시됩니다 -->
@@ -32,9 +29,21 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const username = "{{ username }}";  // Django 템플릿 변수를 사용하여 사용자 이름을 가져옵니다.
+        const roomName = `process_video_${username}`;  // roomName을 동적으로 설정합니다.
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/process_video/' + roomName + '/'
+        );
+
         const form = document.querySelector('form');
         const uploadButton = document.querySelector('button[type="submit"]');
         const logMessages = document.getElementById('logMessages');
+        let imageIndex = 0;  // 이미지 인덱스 초기화
+        let intervalId = null;  // 이미지 로딩을 위한 인터벌 ID
+
+        let currentContainer = document.getElementById('imageContainer1');
+        let bufferContainer = document.getElementById('imageContainer2');
+
 
         form.addEventListener('submit', function(event) {
             event.preventDefault();
@@ -54,10 +63,30 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log(data)
                 if (data.username && data.videoFilename && data.totalChunks) {
                     logMessages.innerText = "비디오 파일을 처리하는 중 입니다."
-                    checkForNewImages(data.username, data.videoFilename, data.totalChunks);
+                    intervalId = setInterval(function() {
+                        const imagePath = `/static/tmp/${username}/${data.videoFilename}/${data.videoFilename}_${imageIndex}.webp`;
+                        const newImg = new Image();
+                        newImg.onload = function() {
+                            newImg.style.width = '100%';
+                            newImg.style.height = 'auto';
+                            bufferContainer.innerHTML = '';
+                            bufferContainer.appendChild(newImg);
+                            bufferContainer.style.display = 'block';
+                            currentContainer.style.display = 'none';
+                            let temp = currentContainer;
+                            currentContainer = bufferContainer;
+                            bufferContainer = temp;
+                            imageIndex++;
+                        };
+                        newImg.onerror = function() {
+                            if (imageIndex == 0) {
+                               
+                        }
+                        };
+                        newImg.src = imagePath;
+                    }, 10000);
                 } else {
                     console.error('Missing username, videoFilename, or totalChunks in response');
                     logMessages.innerText = '로그인 후 이용해주세요.';
@@ -71,56 +100,26 @@
             });
         });
 
-        function checkForNewImages(username, videoFilename, totalChunks) {
-            let imageIndex = 0;
-            let currentContainer = document.getElementById('imageContainer1');
-            let bufferContainer = document.getElementById('imageContainer2');
-            const roomName = `process_video_${username}`;  // roomName을 동적으로 설정합니다.
-            const chatSocket = new WebSocket(
-                'ws://' + window.location.host + '/ws/process_video/' + roomName + '/'
-            );
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log(data);
+            if (data.message === 'completed') {
+                clearInterval(intervalId);
+                logMessages.innerText = '영상 변환이 완료되었습니다.';
+                const outputVideoPath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_output.mp4`;
+                const a = document.createElement('a');
+                a.href = outputVideoPath;
+                a.download = `${videoFilename}_output.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                uploadButton.disabled = false;
+            }
+        };
 
-            const intervalId = setInterval(() => {
-                chatSocket.onmessage = function(e) {
-                    const data = JSON.parse(e.data);
-                    if (data.message === 'completed') {
-                        clearInterval(intervalId);
-                        logMessages.innerText = '영상 변환이 완료되었습니다.';
-                        const outputVideoPath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_output.mp4`;
-                        const a = document.createElement('a');
-                        a.href = outputVideoPath;
-                        a.download = `${videoFilename}_output.mp4`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        uploadButton.disabled = false;  
-                        return;
-                    }
-                }
-
-                const imagePath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_${imageIndex}.jpg`;
-                const newImg = new Image();
-                newImg.onload = function() {
-                    newImg.style.width = '100%';  // 이미지의 너비를 컨테이너의 100%로 설정
-                    newImg.style.height = 'auto';  // 이미지의 높이를 자동으로 조절
-
-                    bufferContainer.innerHTML = '';  // 버퍼 컨테이너를 비웁니다.
-                    bufferContainer.appendChild(newImg);  // 새 이미지를 버퍼 컨테이너에 추가합니다.
-                    bufferContainer.style.display = 'block';  // 버퍼 컨테이너를 보이게 합니다.
-                    currentContainer.style.display = 'none';  // 현재 컨테이너를 숨깁니다.
-
-                    // 컨테이너 역할 교체
-                    let temp = currentContainer;
-                    currentContainer = bufferContainer;
-                    bufferContainer = temp;
-                    imageIndex++;  // 이미지가 성공적으로 로드되었을 때만 인덱스 증가
-                };
-                newImg.onerror = function() {
-                    // 이미지 로드 실패 시 처리
-                }
-                newImg.src = imagePath;
-            }, 2000); // 2초 간격으로 로드
-        }
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
     });
 </script>
 {% endblock %}
