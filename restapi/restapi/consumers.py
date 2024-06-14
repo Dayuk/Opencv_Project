@@ -44,6 +44,7 @@ class VideoProcessConsumer(AsyncWebsocketConsumer):
         # 그룹에서 메시지를 받아 클라이언트에 전송합니다.
         message = event['message']
 
+        # 메시지를 JSON 형식으로 클라이언트에 전송
         await self.send(text_data=json.dumps({
             'message': message
         }))

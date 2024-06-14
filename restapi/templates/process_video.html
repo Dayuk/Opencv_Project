@@ -10,7 +10,7 @@
             <label for="videoFiles">비디오 파일:</label><br>
             <input type="file" id="videoFiles" name="videoFiles" multiple><br>
             <label for="videoUrl">YouTube 링크:</label><br>
-            <input type="text" id="videoUrls" name="videoUrls" placeholder="YouTube URL"><br>
+            <input type="text" id="videoUrls" name="videoUrls" placeholder="YouTube URL(최대 3분)"><br>
             <button type="submit">파일 업로드</button>
         </form>
     </div>
@@ -40,10 +40,18 @@
         const logMessages = document.getElementById('logMessages');
         let imageIndex = 0;  // 이미지 인덱스 초기화
         let intervalId = null;  // 이미지 로딩을 위한 인터벌 ID
+        let pingIntervalId = null;  // 웹 소켓 핑을 위한 인터벌 ID
 
         let currentContainer = document.getElementById('imageContainer1');
         let bufferContainer = document.getElementById('imageContainer2');
 
+        function startWebSocketPing() {
+            pingIntervalId = setInterval(function() {
+                if (chatSocket.readyState === WebSocket.OPEN) {
+                    chatSocket.send(JSON.stringify({ 'message': 'ping' }));
+                }
+            }, 5000);  // 5초마다 핑 메시지 전송
+        }
 
         form.addEventListener('submit', function(event) {
             event.preventDefault();
@@ -51,10 +59,17 @@
             const formData = new FormData(form);
 
             const videoFilesInput = document.getElementById('videoFiles');
+            const videoUrlsInput = document.getElementById('videoUrls');
+
             if (videoFilesInput.files.length > 0) {
                 const videoFilename = videoFilesInput.files[0].name;
                 formData.append('videoFilename', videoFilename);
                 logMessages.innerText = "비디오 파일을 업로드하는 중 입니다."
+            }
+
+            if (videoUrlsInput.value.trim() !== '') {
+                formData.append('videoUrl', videoUrlsInput.value.trim());
+                logMessages.innerText = "YouTube 링크를 처리하는 중 입니다."
             }
 
             fetch('/process_video_upload/', {
@@ -64,29 +79,46 @@
             .then(response => response.json())
             .then(data => {
                 if (data.username && data.videoFilename && data.totalChunks) {
+                    var username = data.username;
+                    var videoFilename = data.videoFilename;  // 여기서 videoFilename을 선언합니다.
                     logMessages.innerText = "비디오 파일을 처리하는 중 입니다."
-                    intervalId = setInterval(function() {
-                        const imagePath = `/static/tmp/${username}/${data.videoFilename}/${data.videoFilename}_${imageIndex}.webp`;
-                        const newImg = new Image();
-                        newImg.onload = function() {
-                            newImg.style.width = '100%';
-                            newImg.style.height = 'auto';
-                            bufferContainer.innerHTML = '';
-                            bufferContainer.appendChild(newImg);
-                            bufferContainer.style.display = 'block';
-                            currentContainer.style.display = 'none';
-                            let temp = currentContainer;
-                            currentContainer = bufferContainer;
-                            bufferContainer = temp;
-                            imageIndex++;
-                        };
-                        newImg.onerror = function() {
-                            if (imageIndex == 0) {
-                               
+                    chatSocket.onmessage = function(e) {
+                        const data = JSON.parse(e.data);
+                        if (data.message === 'start') {
+                            intervalId = setInterval(function() {
+                                const imagePath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_${imageIndex}.webp`;  // videoFilename을 사용합니다.
+                                const newImg = new Image();
+                                newImg.onload = function() {
+                                    newImg.style.width = '100%';
+                                    newImg.style.height = 'auto';
+                                    bufferContainer.innerHTML = '';
+                                    bufferContainer.appendChild(newImg);
+                                    bufferContainer.style.display = 'block';
+                                    currentContainer.style.display = 'none';
+                                    let temp = currentContainer;
+                                    currentContainer = bufferContainer;
+                                    bufferContainer = temp;
+                                    imageIndex++;
+                                };
+                                newImg.onerror = function() {
+                                    // Handle error
+                                };
+                                newImg.src = imagePath;
+                            }, 10000);  // 10초마다 이미지 업데이트
+                        } else if (data.message === 'completed') {
+                            clearInterval(intervalId);
+                            clearInterval(pingIntervalId);  // 핑 인터벌도 중지
+                            logMessages.innerText = '영상 변환이 완료되었습니다.';
+                            const outputVideoPath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_output.mp4`;
+                            const a = document.createElement('a');
+                            a.href = outputVideoPath;
+                            a.download = `${videoFilename}_output.mp4`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            uploadButton.disabled = false;
                         }
-                        };
-                        newImg.src = imagePath;
-                    }, 10000);
+                    };
                 } else {
                     console.error('Missing username, videoFilename, or totalChunks in response');
                     logMessages.innerText = '로그인 후 이용해주세요.';
@@ -100,27 +132,26 @@
             });
         });
 
-        chatSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            console.log(data);
-            if (data.message === 'completed') {
-                clearInterval(intervalId);
-                logMessages.innerText = '영상 변환이 완료되었습니다.';
-                const outputVideoPath = `/static/tmp/${username}/${videoFilename}/${videoFilename}_output.mp4`;
-                const a = document.createElement('a');
-                a.href = outputVideoPath;
-                a.download = `${videoFilename}_output.mp4`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                uploadButton.disabled = false;
-            }
-        };
-
         chatSocket.onclose = function(e) {
             console.error('Chat socket closed unexpectedly');
+            clearInterval(pingIntervalId);  // 소켓이 닫히면 핑 인터벌 중지
         };
+
+        startWebSocketPing();  // 웹 소켓 핑 시작
+
+        const videoFilesInput = document.getElementById('videoFiles');
+        const videoUrlsInput = document.getElementById('videoUrls');
+
+        form.addEventListener('submit', function(event) {
+            const filesSelected = videoFilesInput.files.length > 0;
+            const urlEntered = videoUrlsInput.value.trim() !== '';
+
+            if ((filesSelected && urlEntered) || (!filesSelected && !urlEntered)) {
+                event.preventDefault(); // 폼 제출 방지
+                alert('비디오 파일이나 YouTube 링크 중 하나만 입력해주세요.');
+                uploadButton.disabled = false;
+            }
+        });
     });
 </script>
 {% endblock %}
-
