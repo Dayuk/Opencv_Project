@@ -5,8 +5,6 @@ from rest_framework import status
 import cv2
 import numpy as np
 import os
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from django.shortcuts import render, redirect
 from django.views import View
 from django.http import HttpResponse, JsonResponse
@@ -45,14 +43,13 @@ logger.addHandler(handler)
 def clean_up_directory(directory, keep_file):
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
-        print(file_path)
         try:
             if os.path.isfile(file_path) and file_path != keep_file and '_output' not in file_path:
                 os.unlink(file_path)
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except Exception as e:
-            print(f'Failed to delete {file_path}. Reason: {e}')
+            logger.error(f'Failed to delete {file_path}. Reason: {e}')
 
 class WeatherAPIView(APIView):
     def get(self, request):
@@ -124,7 +121,7 @@ class ProcessVideoUpload(View):
 
     async def handle_video_url(self, video_url, username):
         user_dir = f'static/tmp/{username}'
-        os.makedirs(user_dir, exist_ok=True)  # 디렉토리가 이미 존재해도 오류를 발생시키지 않음
+        os.makedirs(user_dir, exist_ok=True)  # 디렉토리가 이미 존재해도 오류를 발생시��키지 않음
         random_filename = f"{uuid.uuid4()}.mp4"  # 랜덤한 파일 이름 생성
         output_path = f'{user_dir}/{random_filename}'
         
@@ -137,6 +134,7 @@ class ProcessVideoUpload(View):
         ydl_opts = {
             'format': 'bestvideo[height<=720]',  # 720p 이하의 최고 화질 비디오만 다운로드
             'outtmpl': output_path,
+            'ffmpeg_location': 'C:/Users/Administrater/ffmpeg-7.0.1.tar/ffmpeg-7.0.1',
             'postprocessors': [{
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': 'mp4',  # 비디오 포맷을 mp4로 설정
@@ -228,8 +226,42 @@ def process_video(request):
     username = request.user.username  # 로그인된 사용자의 이름을 가져옵니다.
     return render(request, 'process_video.html', {'username': username})
 
+@login_required
+def weather(request):
+    ip_address = get_client_ip(request)
+    weather_data = get_weather_data(ip_address, update=False)
+    
+    if weather_data:
+        context = {
+            'weather_date': weather_data['date'],
+            'weather_location': weather_data['location'],
+            'weather_icon': weather_data['status'],  # 이미지 파일 이름
+            'weather_status': weather_data['status'],
+            'temperature': weather_data['temperature'],
+            'humidity': weather_data['humidity'],
+        }
+    else:
+        context = {
+            'weather_date': '데이터를 가져올 수 없습니다.',
+            'weather_location': '',
+            'weather_icon': '맑음',  # 기본 이미지
+            'weather_status': '',
+            'temperature': '',
+            'humidity': '',
+        }
+    
+    return render(request, 'weather.html', context)
+
 def index(request):
     return render(request, 'index.html')
 
 def profile_view(request):
     return render(request, 'profile.html')
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

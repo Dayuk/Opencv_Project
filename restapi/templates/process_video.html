@@ -10,7 +10,7 @@
             <label for="videoFiles">비디오 파일:</label><br>
             <input type="file" id="videoFiles" name="videoFiles" multiple><br>
             <label for="videoUrl">YouTube 링크:</label><br>
-            <input type="text" id="videoUrls" name="videoUrls" placeholder="YouTube URL(최대 3분)"><br>
+            <input type="text" id="videoUrl" name="videoUrls" placeholder="YouTube URL(최대 3분)"><br>
             <button type="submit">파일 업로드</button>
         </form>
     </div>
@@ -59,7 +59,16 @@
             const formData = new FormData(form);
 
             const videoFilesInput = document.getElementById('videoFiles');
-            const videoUrlsInput = document.getElementById('videoUrls');
+            const videoUrlInput = document.getElementById('videoUrl');
+
+            const filesSelected = videoFilesInput.files.length > 0;
+            const urlEntered = videoUrlInput.value.trim() !== '';
+
+            if ((filesSelected && urlEntered) || (!filesSelected && !urlEntered)) {
+                alert('비디오 파일이나 YouTube 링크 중 하나만 입력해주세요.');
+                uploadButton.disabled = false;
+                return; // 추가된 return 문
+            }
 
             if (videoFilesInput.files.length > 0) {
                 const videoFilename = videoFilesInput.files[0].name;
@@ -67,8 +76,8 @@
                 logMessages.innerText = "비디오 파일을 업로드하는 중 입니다."
             }
 
-            if (videoUrlsInput.value.trim() !== '') {
-                formData.append('videoUrl', videoUrlsInput.value.trim());
+            if (videoUrlInput.value.trim() !== '') {
+                formData.append('videoUrl', videoUrlInput.value.trim());
                 logMessages.innerText = "YouTube 링크를 처리하는 중 입니다."
             }
 
@@ -138,20 +147,6 @@
         };
 
         startWebSocketPing();  // 웹 소켓 핑 시작
-
-        const videoFilesInput = document.getElementById('videoFiles');
-        const videoUrlsInput = document.getElementById('videoUrls');
-
-        form.addEventListener('submit', function(event) {
-            const filesSelected = videoFilesInput.files.length > 0;
-            const urlEntered = videoUrlsInput.value.trim() !== '';
-
-            if ((filesSelected && urlEntered) || (!filesSelected && !urlEntered)) {
-                event.preventDefault(); // 폼 제출 방지
-                alert('비디오 파일이나 YouTube 링크 중 하나만 입력해주세요.');
-                uploadButton.disabled = false;
-            }
-        });
     });
 </script>
 {% endblock %}

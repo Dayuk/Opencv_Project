@@ -8,10 +8,10 @@ from django.conf import settings
 
 def get_weather_data(adress, update):
     try:
-        current_date = datetime.now().date()
+        current_date = datetime.datetime.now().date()
         current_date = current_date.strftime("%Y%m%d")
 
-        now = datetime.now()
+        now = datetime.datetime.now()
         if now.minute < 45:
             if now.hour == 0:
                 base_time = "2330"
@@ -90,35 +90,35 @@ def get_weather_data(adress, update):
                 weather_data['sky'] = item['fcstValue']
             if item['category'] == 'PTY':
                 weather_data['sky2'] = item['fcstValue']
-        str_sky = adress
-        if weather_data['sky'] != None or weather_data['sky2'] != None:
-            str_sky += " "
-            if weather_data['sky2'] == '0':
-                if weather_data['sky'] == '1':
-                    str_sky += "맑음"
-                elif weather_data['sky'] == '3':
-                    str_sky += "구름많음"
-                elif weather_data['sky'] == '4':
-                    str_sky += "흐림"
-            elif weather_data['sky2'] == '1':
-                str_sky += "비"
-            elif weather_data['sky2'] == '2':
-                str_sky += "비와 눈"
-            elif weather_data['sky2'] == '3':
-                str_sky += "눈"
-            elif weather_data['sky2'] == '5':
-                str_sky += "빗방울이 떨어짐"
-            elif weather_data['sky2'] == '6':
-                str_sky += "빗방울과 눈"
-            elif weather_data['sky2'] == '7':
-                str_sky += "눈이 날림"
-            str_sky += " "
-        if weather_data['tmp'] != None:
-            str_sky += weather_data['tmp'] + '°C '
-        if weather_data['hum'] != None:
-            str_sky += weather_data['hum'] + '%'
+        
+        weather_status = ""
+        if weather_data['sky2'] == '0':
+            if weather_data['sky'] == '1':
+                weather_status = "맑음"
+            elif weather_data['sky'] == '3':
+                weather_status = "구름많음"
+            elif weather_data['sky'] == '4':
+                weather_status = "흐림"
+        elif weather_data['sky2'] == '1':
+            weather_status = "비"
+        elif weather_data['sky2'] == '2':
+            weather_status = "비와 눈"
+        elif weather_data['sky2'] == '3':
+            weather_status = "눈"
+        elif weather_data['sky2'] == '5':
+            weather_status = "빗방울이 떨어짐"
+        elif weather_data['sky2'] == '6':
+            weather_status = "빗방울과 눈"
+        elif weather_data['sky2'] == '7':
+            weather_status = "눈이 날림"
+
+        return {
+            'date': current_date,
+            'location': adress,
+            'status': weather_status,
+            'temperature': weather_data['tmp'],
+            'humidity': weather_data['hum']
+        }
     except Exception as e:
         print("Error in WeatherThread:", e)
-    finally:
-        return str_sky
-
+        return None
