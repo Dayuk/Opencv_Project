@@ -1,0 +1,23 @@
+h1 {
+    display: flex;
+    color: #fff;
+    font-size: 25px;
+    margin-bottom: 30px;
+}
+.weather-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%; /* 전체 너비를 사용 */
+    gap: 40px; /* 요소들 사이의 간격 */
+}
+.weather-date, .weather-location {
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+}
+.weather-status, .weather-humidity {
+    font-size: 18px;
+    color: #fff;
+}

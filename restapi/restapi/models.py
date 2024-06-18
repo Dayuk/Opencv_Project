@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from allauth.account.signals import user_signed_up
 from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in
+import uuid
 
 class CustomUser(AbstractUser):
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
@@ -65,3 +66,15 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+class APIKey(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='api_key')
+    key = models.CharField(max_length=40, unique=True)
+    last_call = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s API Key"
+
+    @classmethod
+    def generate_key(cls):
+        return str(uuid.uuid4())

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     "rest_framework",
+    "rest_framework_api_key",
     "rest_framework.authtoken",
     "channels",
 
@@ -189,6 +190,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'),]
 
 IPSTACK_KEY = config['IPSTACK_KEY']
 WEATHER_API_KEY = config['WEATHER_API_KEY']
+WEATHER_API_KEY2 = config['WEATHER_API_KEY2']
 
 GOOGLE_CLIENT_ID = config['GOOGLE_CLIENT_ID']
 GOOGLE_CLIENT_SECRET = config['GOOGLE_CLIENT_SECRET']
@@ -224,4 +226,10 @@ CHANNEL_LAYERS = {
             "hosts": [('127.0.0.1', 6379)],
         },
     },
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework_api_key.permissions.HasAPIKey",
+    ]
 }

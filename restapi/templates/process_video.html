@@ -3,13 +3,14 @@
 {% block title %}차선 및 차량 인식{% endblock %}
 
 {% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/process_video.css' %}">
+<h1>API TEST</h1>
 <div class="container">
     <div class="video_container">
         <form action="/process_video_upload/" method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            <label for="videoFiles">비디오 파일:</label><br>
-            <input type="file" id="videoFiles" name="videoFiles" multiple><br>
-            <label for="videoUrl">YouTube 링크:</label><br>
+            <input type="file" id="videoFiles" name="videoFiles" multiple class="file-input"><br>
             <input type="text" id="videoUrl" name="videoUrls" placeholder="YouTube URL(최대 3분)"><br>
             <button type="submit">파일 업로드</button>
         </form>

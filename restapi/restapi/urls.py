@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from . import views
 from django.contrib.auth import views as auth_views
 
-from .views import index, process_video, WeatherAPIView, ProcessVideoUpload, weather
+from .views import index, process_video, ProcessVideoUpload, weather, myapi
 
 urlpatterns = [
     path('', index, name='index'),
@@ -20,7 +20,15 @@ urlpatterns = [
     path('process_video_upload/', ProcessVideoUpload.as_view(), name='process_video_upload'),
     
     path('weather/', weather, name='weather'),
-    path('weather_update/', WeatherAPIView.as_view(), name='weather'),
+
+    path('api/', myapi, name='myapi'),
+]
+
+urlpatterns += [
+    path('api/create_key/', views.create_api_key, name='create_api_key'),
+    path('api/refresh_key/', views.refresh_api_key, name='refresh_api_key'),
+    path('api/get_api_key/', views.get_api_key, name='get_api_key'),
+    path('api/weather/', views.api_weather, name='api_weather'),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

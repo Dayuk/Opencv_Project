@@ -1,15 +1,12 @@
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.parsers import FileUploadParser
 from rest_framework import status
 import cv2
 import numpy as np
 import os
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.views import View
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.contrib.auth import get_user
-from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -17,9 +14,7 @@ from channels.layers import get_channel_layer
 import aiohttp
 import aiofiles
 import asyncio
-from asgiref.sync import sync_to_async, async_to_sync
-import datetime
-import time
+from asgiref.sync import sync_to_async
 import imageio
 import cv2
 import uuid
@@ -30,6 +25,7 @@ import logging
 from yt_dlp import YoutubeDL
 from concurrent.futures import ThreadPoolExecutor
 
+from .models import APIKey
 from .get_weather_data import get_weather_data
 
 # 로거 설정
@@ -50,18 +46,6 @@ def clean_up_directory(directory, keep_file):
                 shutil.rmtree(file_path)
         except Exception as e:
             logger.error(f'Failed to delete {file_path}. Reason: {e}')
-
-class WeatherAPIView(APIView):
-    def get(self, request):
-        # 날씨 데이터 가져오기
-        # weather_data = get_weather_data()
-        return Response("weather_data")
-
-class OpenCVAPIView(APIView):
-    def get(self, request):
-        video_url = request.query_params.get('video_url')
-        result = process_video(video_url)
-        return Response(result)
 
 class ProcessVideoUpload(View):
     async def post(self, request):
@@ -121,7 +105,7 @@ class ProcessVideoUpload(View):
 
     async def handle_video_url(self, video_url, username):
         user_dir = f'static/tmp/{username}'
-        os.makedirs(user_dir, exist_ok=True)  # 디렉토리가 이미 존재해도 오류를 발생시��키지 않음
+        os.makedirs(user_dir, exist_ok=True)  # 디렉토리가 이미 존재해도 오류를 발생시키지 않음
         random_filename = f"{uuid.uuid4()}.mp4"  # 랜덤한 파일 이름 생성
         output_path = f'{user_dir}/{random_filename}'
         
@@ -134,7 +118,6 @@ class ProcessVideoUpload(View):
         ydl_opts = {
             'format': 'bestvideo[height<=720]',  # 720p 이하의 최고 화질 비디오만 다운로드
             'outtmpl': output_path,
-            'ffmpeg_location': 'C:/Users/Administrater/ffmpeg-7.0.1.tar/ffmpeg-7.0.1',
             'postprocessors': [{
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': 'mp4',  # 비디오 포맷을 mp4로 설정
@@ -215,11 +198,13 @@ async def get_username(request):
     user = await sync_to_async(get_user)(request)
     return user.username if user.is_authenticated else 'anonymous'
 
-class ManageAPIKey(View):
-    def post(self, request):
-        api_key = request.POST.get('apiKey')
-        # API 키 저장 로직 구현
-        return HttpResponse("API 키 저장 완료")
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 @login_required
 def process_video(request):
@@ -229,13 +214,14 @@ def process_video(request):
 @login_required
 def weather(request):
     ip_address = get_client_ip(request)
-    weather_data = get_weather_data(ip_address, update=False)
+
+    weather_data = get_weather_data(ip_address)
     
     if weather_data:
         context = {
             'weather_date': weather_data['date'],
             'weather_location': weather_data['location'],
-            'weather_icon': weather_data['status'],  # 이미지 파일 이름
+            'weather_icon': weather_data['icon'],  # 이미지 파일 이름
             'weather_status': weather_data['status'],
             'temperature': weather_data['temperature'],
             'humidity': weather_data['humidity'],
@@ -258,10 +244,38 @@ def index(request):
 def profile_view(request):
     return render(request, 'profile.html')
 
-def get_client_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+def myapi(request):
+    return render(request, 'myapi.html')
+
+def api_weather(request):
+    return render(request, 'api_weather.html')
+
+@login_required
+def create_api_key(request):
+    new_key_value = APIKey.generate_key()  # 유니크한 키 생성
+    new_key, created = APIKey.objects.get_or_create(user=request.user, defaults={'key': new_key_value})
+    if not created:
+        # 이미 키가 존재하는 경우, 새로운 키를 생성하고 저장
+        new_key.key = new_key_value
+        new_key.save()
+    return JsonResponse({'key': str(new_key.key)})
+
+@login_required
+def refresh_api_key(request):
+    try:
+        old_key = APIKey.objects.get(user=request.user)
+        old_key.key = APIKey.generate_key()
+        old_key.save()
+        return JsonResponse({'new_key': str(old_key.key)})
+    except APIKey.DoesNotExist:
+        return JsonResponse({'error': 'API key does not exist'}, status=404)
+
+@login_required
+def get_api_key(request):
+    try:
+        api_key = APIKey.objects.get(user=request.user)
+    except APIKey.DoesNotExist:
+        # APIKey가 존재하지 않는 경우, 새로운 키를 생성하고 저장
+        new_key_value = APIKey.generate_key()
+        api_key = APIKey.objects.create(user=request.user, key=new_key_value)
+    return JsonResponse({'key': str(api_key.key)})

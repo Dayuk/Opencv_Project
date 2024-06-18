@@ -3,182 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}REST API{% endblock %}</title>
+    {% load static %}
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <link rel="short icon" href="/static/image/favicon.png">
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #383838;
-            color: #D3D3D3;
-            margin: 0;
-            padding: 0;
-            padding-top: 70px; /* 헤더의 높이만큼 상단에 여백을 추가 */
-            display: flex;
-            height: 100vh;
-        }
-        header {
-            background-color: #28A745;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%; /* 전체 너비를 차지하도록 설정 */
-            position: fixed; /* 헤더를 상단에 고정 */
-            top: 0; /* 상단에서 0px 위치에 고정 */
-            z-index: 2000; /* 다른 요소들 위에 표시되도록 z-index 설정 */
-        }
-        .sidebar {
-            width: 15%;
-            border-right: 1px solid #28A745;
-            box-shadow: 0 4px 6px rgba(0,0,0,1);
-            height: 100%;
-            overflow-y: auto;
-        }
-        .content {
-            margin-top: 70px; /* header의 높이만큼 상단 여백 추가 */
-            width: 100%;
-            justify-content: center;
-            align-items: center;
-        }
-        .api-list {
-            list-style: none;
-            padding: 0;
-        }
-        .api-list li a {
-            color: #D3D3D3;
-            padding: 10px; /* 상단, 하단, 좌우 간격을 10px로 설정 */
-            text-decoration: none;
-            transition: background-color 0.3s;
-            display: block; /* 링크를 블록 요소로 만들어 너비 전체를 차지하도록 함 */
-            width: 100%; /* 부모 요소의 너비에 맞춤 */
-        }
-        .api-list li a.active, .api-list li a:hover {
-            background-color: #28A745; /* 활성화 및 호버 상태의 배경색 */
-            color: #fff; /* 활성화 및 호버 상태의 텍스트 색상 */
-        }
-        .login-button_header {
-            position: fixed; /* 버튼을 고정 위에 설정 */
-            top: 20px; /* 상단에서 10px 떨어진 위치에 배치 */
-            right: 20px; /* 오른쪽에서 20px 떨어진 위치에 배치 */
-            background-color: #28A745;
-            color: #fff;
-            border: none;
-            font-weight: bold;
-        }
-        .login-button:hover {
-            color: #383838;
-            font-weight: bold;
-        }
-        .login-container {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background-color: #28A745;
-            color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,1);
-            z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;    
-        }
-        .login-container h2 {
-            margin-top: 20px; /* h2 태그 상단 여백 추가 */
-            margin-bottom: 20px; 
-        }
-        .container {
-            display: flex;  /* Flexbox를 활성화 */
-            height: 80%;   /* 필요에 따라 높이 조정 */
-        }
-        .logo img {
-            height: 50px;
-            transition: opacity 0.1s ease-in-out;
-        }
-        .logo img.fade {
-            opacity: 0;
-        }
-        .login-button {
-            background-color: #28A745;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        .login-button:hover {
-            background-color: #218838;
-        }
-        .login-container .button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .login-container .button img {
-            margin-right: 10px;
-            width: 30px;
-            height: 30px;
-        }
-        .login-container .button.github {
-            background-color: #333;
-            color: #fff;
-        }
-        .login-container .button.github:hover {
-            background-color: #24292e;
-        }
-        .login-container .button.google {
-            background-color: #fff;
-            color: #000;
-            border: 1px solid #ddd;
-        }
-        .login-container .button.google:hover {
-            background-color: #f1f1f1;
-        }
-        .profile-icon {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            cursor: pointer;
-        }
-        .profile-image {
-            width: 50px;
-            height: 50px;
-        }
-        .profile-menu {
-            display: none;
-            position: absolute;
-            margin-top: 5px;
-            right: 0;
-            border-radius: 5px;
-            background-color: #fff;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 150px;
-            text-align: center;
-        }
-        .profile-menu a, .profile-menu p {
-            display: block;
-            padding: 10px;
-            border-radius: 5px;
-            color: #333;
-            text-decoration: none;
-        }
-        .profile-menu a.active {
-            background-color: #f1f1f1;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -191,7 +21,7 @@
             <div class="profile-icon">
                 <img src="/static/image/profile-icon.svg" alt="Profile Icon" class="profile-image">
                 <div class="profile-menu">
-                    <a href="/myapi">My API</a>
+                    <a href="{% url 'myapi'%}">MY API</a>
                     <a href="{% url 'logout' %}" class="logout-button">로그아웃</a>
                 </div>
             </div>

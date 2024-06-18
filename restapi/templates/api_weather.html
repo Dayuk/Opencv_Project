@@ -1,0 +1,29 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="weather-info">
+    <h1>Weather API</h1>
+    <div id="weatherData"></div>
+</div>
+{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/weather', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': 'your_api_key_here',  // API 키를 여기에 입력하세요.
+            'X-IP-ADDRESS': 'your_ip_address_here'  // IP 주소를 여기에 입력하세요.
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const weatherDiv = document.getElementById('weatherData');
+        weatherDiv.innerHTML = `<p>Temperature: ${data.temperature}°C</p>
+                                 <p>Humidity: ${data.humidity}%</p>
+                                 <p>Status: ${data.weather_status}</p>`;
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>
