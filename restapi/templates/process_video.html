@@ -6,7 +6,7 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/process_video.css' %}">
 <h1>API TEST</h1>
-<div class="container">
+<div class="video_container_main">
     <div class="video_container">
         <form action="/process_video_upload/" method="post" enctype="multipart/form-data">
             {% csrf_token %}

@@ -28,7 +28,9 @@ urlpatterns += [
     path('api/create_key/', views.create_api_key, name='create_api_key'),
     path('api/refresh_key/', views.refresh_api_key, name='refresh_api_key'),
     path('api/get_api_key/', views.get_api_key, name='get_api_key'),
-    path('api/weather/', views.api_weather, name='api_weather'),
+    path('api/v1/weather/', views.v1_weather_api, name='v1_weather_api'),
+    path('api/v1/car_recognition/image/', views.v1_car_recognition_api_image, name='v1_car_recognition_api_image'),
+    path('api/v1/car_recognition/youtube/', views.v1_car_recognition_api_youtube, name='v1_car_recognition_api_youtube'),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

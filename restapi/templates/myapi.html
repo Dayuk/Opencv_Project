@@ -5,30 +5,83 @@
 <link rel="stylesheet" href="{% static 'css/myapi.css' %}">
 
 <div class="api-management">
+    <h2>API document</h2>
     <div>
-        <label for="apiKeyDisplay">API KEY : </label>
-        <input type="text" id="apiKeyDisplay" readonly onclick="copyApiKey()">
+        <label for="apiKeyDisplay">API KEY :  </label>
+        <label id="apiKeyDisplay" onclick="copyApiKey()">{{ api_key }}</label>
         <button onclick="regenerateApiKey()">Regenerate Key</button>
     </div>
-    <div>
-        <h2>API document</h2>
-        <ul>
-            <li><a href="{% url 'api_weather' %}">Weather API</a></li>
-            <li><a href="/process_video">Process Video API</a></li>
-        </ul>
+</div>
+<div class="myapi-api-list">
+    <label id="weatherApiLabel">- Weather API</label><br>
+    <label id="videoApiLabel">- Process Video API</label>
+</div>
+
+<!-- API 정보 및 테스트 박스 -->
+<div id="weatherApiInfo" class="api-info">
+    <h2>Weather API Information</h2>
+    <div class="api-info-container">
+        <pre>
+            <code>
+    '/api/v1/weather/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': 'your_api_key_here',
+            'X-IP-ADDRESS': 'ip_address_here'
+        }
+    }
+            </code>
+        </pre>
     </div>
+    <!-- Weather API 정보 및 테스트 폼 -->
+</div>
+
+<div id="videoApiInfo" class="api-info">
+    <h2>Process Video API Information</h2>
+    <div class="api-info-container">
+        <pre>
+            <h3>Image</h3>
+            <code>
+    '/api/v1/car_recognition/image/', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': 'your_api_key_here',
+            'X-BASE64-INCODE-IMAGE': 'base64_incode_image_here'
+        }
+    }
+            </code>
+        </pre>
+    </div>
+    <div class="api-info-container">
+        <pre>
+            <h3>Youtube link</h3>
+            <code>
+    '/api/v1/car_recognition/youtube/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-KEY': 'your_api_key_here',
+            'X-YOUTUBE-LINK': 'youtube_link_here',
+            'X-YOUTUBE-STARTTIME-SECONDS': 'youtube_starttime_here[ex: 360]',
+            'X-YOUTUBE-ENDTIME-SECONDS': 'youtube_endtime_here[ex: 420]'
+        }
+    }
+            </code>
+        </pre>
+    </div>
+    <!-- Process Video API 정보 및 테스트 폼 -->
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        showApiKey();
-    });
+    showApiKey();
 
     function regenerateApiKey() {
         fetch('{% url "refresh_api_key" %}')
             .then(response => response.json())
             .then(data => {
-                document.getElementById('apiKeyDisplay').value = data.new_key;
+                document.getElementById('apiKeyDisplay').textContent = data.new_key;
             });
     }
 
@@ -36,13 +89,17 @@
         fetch('{% url "get_api_key" %}')
             .then(response => response.json())
             .then(data => {
-                document.getElementById('apiKeyDisplay').value = data.key;
+                document.getElementById('apiKeyDisplay').textContent = data.key;
             });
     }
 
     function copyApiKey() {
-        const apiKeyInput = document.getElementById('apiKeyDisplay');
-        apiKeyInput.select();
+        const apiKeyLabel = document.getElementById('apiKeyDisplay');
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(apiKeyLabel);
+        selection.removeAllRanges();
+        selection.addRange(range);
         document.execCommand('copy');
 
         // 툴팁 생성 및 위치 설정
@@ -51,22 +108,28 @@
         tooltip.textContent = 'Copied!';
         document.body.appendChild(tooltip);
 
-        // 마우스 이벤트에 따라 툴팁 위치 업데이트
-        function moveTooltip(e) {
-            tooltip.style.left = e.pageX + 10 + 'px';
-            tooltip.style.top = e.pageY + 10 + 'px';
-            tooltip.style.visibility = 'visible';
-            tooltip.style.opacity = '1';
-        }
+        // apiKeyDisplay 오른쪽 아래에 툴팁 위치 설정
+        const rect = apiKeyLabel.getBoundingClientRect();
+        tooltip.style.position = 'absolute';
+        tooltip.style.left = `${rect.right + 10}px`; // 오른쪽으로 10px 여백
+        tooltip.style.top = `${rect.bottom + 5}px`; // 아래로 5px 여백
 
-        document.addEventListener('mousemove', moveTooltip);
+        // 툴팁 보이기
+        tooltip.style.opacity = '1';
 
         // 일정 시간 후 툴팁 제거
         setTimeout(function() {
             tooltip.style.opacity = '0';
-            document.removeEventListener('mousemove', moveTooltip);
             setTimeout(() => document.body.removeChild(tooltip), 500);
         }, 2000);
     }
+
+    document.getElementById('weatherApiLabel').addEventListener('click', function() {
+        document.getElementById('weatherApiInfo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    document.getElementById('videoApiLabel').addEventListener('click', function() {
+        document.getElementById('videoApiInfo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
 </script>
 {% endblock %}

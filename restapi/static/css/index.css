@@ -8,6 +8,7 @@ body {
     display: flex;
     height: 100vh;
 }
+
 header {
     background-color: #28A745;
     padding: 10px 20px;
@@ -29,8 +30,6 @@ header {
 .content {
     margin-top: 70px; /* header의 높이만큼 상단 여백 추가 */
     width: 100%;
-    justify-content: center;
-    align-items: center;
 }
 .api-list {
     list-style: none;
@@ -85,7 +84,14 @@ header {
 }
 .container {
     display: flex;  /* Flexbox를 활성화 */
-    height: 80%;   /* 필요에 따라 높이 조정 */
+    height: 100%;   /* 필요에 따라 높이 조정 */
+    overflow-y: auto; /* 스크롤 가능하도록 설정 */
+    scrollbar-width: none; /* 파이어폭스에서 스크롤바 숨김 */
+}
+
+/* 크롬, 사파리, 오페라에서 스크롤바 숨김 */
+.container::-webkit-scrollbar {
+    display: none;
 }
 .logo img {
     height: 50px;

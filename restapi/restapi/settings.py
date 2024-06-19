@@ -4,6 +4,7 @@ import warnings
 from django.utils.deprecation import RemovedInDjango50Warning
 import mimetypes
 import os
+import torch
 
 mimetypes.add_type("text/css", ".css", True)
 
@@ -160,14 +161,8 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'  # 같은 출처의 도메인에서만 <iframe> �
 
 REDIRECT_URL = '/'
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 ALLOWED_HOSTS = ['crane-careful-prawn.ngrok-free.app', 'localhost', '127.0.0.1']
 
@@ -233,3 +228,7 @@ REST_FRAMEWORK = {
         "rest_framework_api_key.permissions.HasAPIKey",
     ]
 }
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+MODEL = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True).to(device)
+MODEL.eval()

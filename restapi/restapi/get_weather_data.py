@@ -118,7 +118,7 @@ def get_weather_data(adress):
                     'date': current_date,
                     'location': adress,
                     'status': weather_status,
-                    'icon' : os.path.join(settings.BASE_DIR, "static", "img", "weather", weather_status + ".png"),
+                    'icon' : os.path.join(settings.BASE_DIR, "static", "weather_image", weather_status + ".png"),
                     'temperature': weather_data['tmp'],
                     'humidity': weather_data['hum']
                 }

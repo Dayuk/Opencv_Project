@@ -1,17 +1,9 @@
-.api-management {
-    padding: 20px;
-}
-
-.api-management h2 {
+h2 {
     color: #fff;
     margin-bottom: 20px;
 }
 
-.api-management div {
-    margin-bottom: 20px;
-}
-
-label {
+h3, h4 {
     color: #fff;
     font-weight: bold;
 }
@@ -39,14 +31,48 @@ button:hover {
     background-color: #383838;
     color: #fff;
 }
+.api-management label {
+    font-weight: bold;
+    color: #fff;
+}
+
+#apiKeyDisplay {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    color: #383838;
+    padding: 5px 10px;
+    margin-right: 10px;
+    margin-left: 10px;
+}
 .copy-tooltip {
-    position: absolute;
     background-color: #383838;
     border-radius: 4px;
     color: #fff;
-    padding: 5px;
-    z-index: 2001;
-    visibility: hidden;
+    padding: 5px 10px;
     opacity: 0;
-    transition: opacity 0.5s;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.myapi-api-list {
+    font-weight: bold;
+    font-size: 20px;
+    color: #fff;
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.myapi-api-list label:hover {
+    color: #28A745;
+}
+
+.api-info-container {
+    width: 100%;
+    border: 1px solid #fff;
+    background-color: #fff;
+    color: #383838;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 20px;
 }
