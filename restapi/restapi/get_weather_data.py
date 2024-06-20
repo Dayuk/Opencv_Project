@@ -151,5 +151,4 @@ def get_weather_data(adress):
                 }
 
     except Exception as e:
-        print("Error in WeatherThread:", e)
         return None

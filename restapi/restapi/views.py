@@ -225,12 +225,11 @@ def weather(request):
         context = {
             'weather_date': '데이터를 가져올 수 없습니다.',
             'weather_location': '',
-            'weather_icon': '맑음',  # 기본 이미지
+            'weather_icon': settings.STATIC_URL + "weather_image/맑음.png",  # 기본 이미지
             'weather_status': '',
             'temperature': '',
             'humidity': '',
         }
-    
     return render(request, 'weather.html', context)
 
 def index(request):

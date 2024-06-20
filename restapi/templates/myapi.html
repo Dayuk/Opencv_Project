@@ -21,8 +21,9 @@
 <div id="weatherApiInfo" class="api-info">
     <h2>Weather API Information</h2>
     <div class="api-info-container">
-        <pre>
-            <code>
+        <div class="code-container">
+            <pre>
+                <code id="code">
     '/api/v1/weather/', {
         method: 'POST',
         headers: {
@@ -31,18 +32,26 @@
             'X-IP-ADDRESS': 'ip_address_here'
         }
     }
-            </code>
-        </pre>
+                </code>
+            </pre>
+        </div>
+        <div class="log-container">
+            <textarea id="apiLog_1" readonly></textarea>
+        </div>
     </div>
-    <!-- Weather API 정보 및 테스트 폼 -->
+    <div class="api-test-bar">
+        <label for="X-IP-ADDRESS">POST : /api/v1/weather/</label>
+        <input type="text" id="X-IP-ADDRESS" placeholder="Enter IP address here" />
+        <button onclick="sendApiRequest(1)">Send Request</button>
+    </div>
 </div>
 
 <div id="videoApiInfo" class="api-info">
-    <h2>Process Video API Information</h2>
+    <h2>Car Recognition API Information</h2>
     <div class="api-info-container">
-        <pre>
-            <h3>Image</h3>
-            <code>
+        <div class="code-container">
+            <pre>
+                <code id="code">
     '/api/v1/car_recognition/image/', {
         method: 'PUT',
         headers: {
@@ -51,13 +60,22 @@
             'X-BASE64-INCODE-IMAGE': 'base64_incode_image_here'
         }
     }
-            </code>
-        </pre>
+                </code>
+            </pre>
+        </div>
+        <div class="log-container">
+            <textarea id="apiLog_2" readonly></textarea>
+        </div>
+    </div>
+    <div class="api-test-bar">
+        <label for="X-BASE64-INCODE-IMAGE">PUT : /api/v1/car_recognition/image/</label>
+        <input type="text" id="X-BASE64-INCODE-IMAGE" placeholder="Enter base64 incode image here" />
+        <button onclick="sendApiRequest(2)">Send Request</button>
     </div>
     <div class="api-info-container">
-        <pre>
-            <h3>Youtube link</h3>
-            <code>
+        <div class="code-container">
+            <pre>
+                <code id="code">
     '/api/v1/car_recognition/youtube/', {
         method: 'POST',
         headers: {
@@ -68,12 +86,21 @@
             'X-YOUTUBE-ENDTIME-SECONDS': 'youtube_endtime_here[ex: 420]'
         }
     }
-            </code>
-        </pre>
+                </code>
+            </pre>
+        </div>
+        <div class="log-container">
+            <textarea id="apiLog_3" readonly></textarea>
+        </div>
+    </div>
+    <div class="api-test-bar">
+        <label for="X-YOUTUBE-LINK">POST : /api/v1/car_recognition/youtube/</label>
+        <input type="text" id="X-YOUTUBE-LINK" placeholder="Enter youtube link here" />
+        <button onclick="sendApiRequest(3)">Send Request</button>
     </div>
     <!-- Process Video API 정보 및 테스트 폼 -->
 </div>
-
+<div style="height: 50px;"></div>
 <script>
     showApiKey();
 
@@ -131,5 +158,50 @@
     document.getElementById('videoApiLabel').addEventListener('click', function() {
         document.getElementById('videoApiInfo').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
+
+    function sendApiRequest(apiNum) {
+        if (apiNum == 1) {
+            const method = 'POST';
+            const endpoint = '/api/v1/weather/';
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-KEY': document.getElementById('apiKeyDisplay').textContent,
+                'X-IP-ADDRESS': document.getElementById('X-IP-ADDRESS').value
+            };
+        }
+        else if (apiNum == 2) {
+            const method = 'PUT';
+            const endpoint = '/api/v1/car_recognition/image/';
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-KEY': document.getElementById('apiKeyDisplay').textContent,
+                'X-BASE64-INCODE-IMAGE': document.getElementById('X-BASE64-INCODE-IMAGE').value
+            };
+        }
+        else if (apiNum == 3){
+            const method = 'POST';
+            const endpoint = '/api/v1/car_recognition/youtube/';
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-KEY': document.getElementById('apiKeyDisplay').textContent,
+                'X-YOUTUBE-LINK': document.getElementById('X-YOUTUBE-LINK').value,
+            };
+        }
+        else {
+            alert("405 Bad Request : Invalid API");
+            return ;
+        }
+        fetch(endpoint, {
+            method: method,
+            headers: headers
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('apiLog_'+apiNum).value += JSON.stringify(data, null, 2) + "\n\n"; // 로그 브라우저에 결과 추가
+        })
+        .catch(error => {
+            document.getElementById('apiLog_'+apiNum).value += '405 Bad Request : Invalid HTTP method\n\n'; // 로그 브라우저에 에러 메시지 추가
+        });
+    }
 </script>
 {% endblock %}

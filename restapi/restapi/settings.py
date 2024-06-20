@@ -6,6 +6,8 @@ import mimetypes
 import os
 import torch
 
+from .secrets import *
+
 mimetypes.add_type("text/css", ".css", True)
 
 warnings.filterwarnings(
@@ -17,15 +19,33 @@ warnings.filterwarnings(
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Set HSTS (HTTP Strict Transport Security)
+# SECURE_HSTS_SECONDS = 31536000  # 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
 
+# # Redirect HTTP to HTTPS
+# SECURE_SSL_REDIRECT = True
+
+IPSTACK_KEY = IPSTACK_KEY
+WEATHER_API_KEY = WEATHER_API_KEY
+WEATHER_API_KEY2 = WEATHER_API_KEY2
+
+GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET = GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI = GOOGLE_REDIRECT_URI
+
+GH_CLIENT_ID = GH_CLIENT_ID
+GH_CLIENT_SECRET = GH_CLIENT_SECRET
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-o-p5ev6b+u!d#zb37bfen#bh$$7qy#ok7g(!gc(m)%4eia3wax'
+SECRET_KEY = SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = bool( os.environ.get('DJANGO_DEBUG', True) )
 
 ALLOWED_HOSTS = []
 
@@ -44,7 +64,7 @@ INSTALLED_APPS = [
     "rest_framework_api_key",
     "rest_framework.authtoken",
     "channels",
-
+    'django_secrets',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
@@ -69,7 +89,6 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://crane-careful-prawn.ngrok-free.app',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
@@ -100,12 +119,12 @@ WSGI_APPLICATION = 'restapi.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django_database',
-        'USER': 'root',
-        'PASSWORD': 'Rlaqjatn256^',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': ENGINE,
+        'NAME': NAME,
+        'USER': USER,
+        'PASSWORD': PASSWORD,
+        'HOST': HOST,
+        'PORT': PORT,
     }
 }
 
@@ -157,14 +176,13 @@ ACCOUNT_USERNAME_REQUIRED = True
 
 AUTH_USER_MODEL = 'restapi.CustomUser'
 
-X_FRAME_OPTIONS = 'SAMEORIGIN'  # 같은 출처의 도메인에서만 <iframe> 내 로딩을 허용
-
 REDIRECT_URL = '/'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'),]
 
-ALLOWED_HOSTS = ['crane-careful-prawn.ngrok-free.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 SESSION_COOKIE_SAMESITE = 'Lax'  # 현재 도메인과 같은 도메인에서만 쿠키를 전송
 CSRF_COOKIE_SAMESITE = 'Lax'     # 현재 도메인과 같은 도메인에서만 쿠키를 전송
@@ -172,27 +190,6 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# config.json 파일 경로 설정
-BASE_DIR = Path(__file__).resolve().parent.parent
-config_path = BASE_DIR / 'restapi/config.json'
-
-# config.json 파일 로드
-with open(config_path, 'r') as file:
-    config = json.load(file)
-
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'),]
-
-IPSTACK_KEY = config['IPSTACK_KEY']
-WEATHER_API_KEY = config['WEATHER_API_KEY']
-WEATHER_API_KEY2 = config['WEATHER_API_KEY2']
-
-GOOGLE_CLIENT_ID = config['GOOGLE_CLIENT_ID']
-GOOGLE_CLIENT_SECRET = config['GOOGLE_CLIENT_SECRET']
-GOOGLE_REDIRECT_URI = config['GOOGLE_REDIRECT_URI']
-
-GH_CLIENT_ID = config['GH_CLIENT_ID']
-GH_CLIENT_SECRET = config['GH_CLIENT_SECRET']
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
