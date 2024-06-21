@@ -26,33 +26,3 @@ API 테스트 인터페이스: 날씨 API, 비디오 처리 API 등을 테스트
 AJAX 요청: API 키 관리 및 API 테스트 요청
 DOM 조작: 사용자 인터페이스 동적 변경
 이벤트 리스너: 사용자 입력 및 상호작용 처리
-
-6. API LIST
-    '/api/v1/weather/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-KEY': 'your_api_key_here',
-            'X-IP-ADDRESS': 'ip_address_here'
-        }
-    }
-
-    '/api/v1/car_recognition/image/', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-KEY': 'your_api_key_here',
-            'X-BASE64-INCODE-IMAGE': 'base64_incode_image_here'
-        }
-    }
-
-    '/api/v1/car_recognition/youtube/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-KEY': 'your_api_key_here',
-            'X-YOUTUBE-LINK': 'youtube_link_here',
-            'X-YOUTUBE-STARTTIME-SECONDS': 'youtube_starttime_here',
-            'X-YOUTUBE-ENDTIME-SECONDS': 'youtube_endtime_here'
-        }
-    }
