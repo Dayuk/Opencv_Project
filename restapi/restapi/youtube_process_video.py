@@ -6,6 +6,7 @@ import asyncio
 import logging
 import imageio
 import cv2
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ def download_and_process_video(youtube_url, start_time, end_time, username):
         # 랜덤 파일 이름 생성
         random_filename = f"{uuid.uuid4()}.mp4"
         # 사용자별 폴더 경로 설정
-        output_directory = f"{STATICFILES_DIRS}/tmp/{username}/{random_filename}"
+        output_directory = os.path.join(STATICFILES_DIRS[0], 'tmp', username)  # 보안 강화를 위해 os.path.join 사용
         # 폴더가 없으면 생성
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
@@ -27,7 +28,7 @@ def download_and_process_video(youtube_url, start_time, end_time, username):
         output_path = os.path.join(output_directory, random_filename)
 
         ydl_opts = {
-            'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]',  # 720p 이하의 최고 화질 비디오
+            'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[height<=720]',  # 720p 이하의 최고 화질 비디오, mp4 확장자 사용
             'outtmpl': output_path,  # 저장될 파일 이름
             'postprocessors': [{
                 'key': 'FFmpegVideoConvertor',
@@ -42,8 +43,10 @@ def download_and_process_video(youtube_url, start_time, end_time, username):
             ydl.download([youtube_url])
 
         run_process_video_frames(output_directory, random_filename)
+        return JsonResponse({'status': 'success', 'file': random_filename})
     except Exception as e:
-        return e
+        logger.error(f"Error downloading or processing video: {e}", exc_info=True)
+        return JsonResponse({'error': str(e)})
 
 def run_process_video_frames(path, filename):
     new_loop = asyncio.new_event_loop()
@@ -65,7 +68,6 @@ async def process_video_frames(user_dir, filename):
             try:
                 preds = MODEL(frame)
                 preds = preds.pandas().xyxy[0]
-                print(preds)
                 for index, row in preds.iterrows():
                     if row['confidence'] > 0.4:
                         x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
@@ -79,4 +81,4 @@ async def process_video_frames(user_dir, filename):
         writer.close()
         reader.close()
         output_file_path = f'{user_dir}/{filename}_output.mp4'
-        return output_file_path
+        return JsonResponse({'output_file_path' : output_file_path})

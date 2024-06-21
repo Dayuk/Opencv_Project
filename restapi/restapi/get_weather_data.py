@@ -3,13 +3,13 @@ import datetime
 import xmltodict
 import requests
 import json
-from pprint import pprint
 import os
+import logging
 
 from django.conf import settings
 from .translations import WEATHER_STATUS_TRANSLATIONS
 
-def get_weather_data(adress):
+def get_weather_data(address):
     try:
         current_date = datetime.datetime.now().date()
         current_date = current_date.strftime("%Y%m%d")
@@ -32,14 +32,13 @@ def get_weather_data(adress):
 
         current_hour = base_time
 
-        key = settings.IPSTACK_KEY
-        send_url = 'http://api.ipstack.com/' + adress + '?access_key=' + key
+        send_url = 'http://api.ipstack.com/' + address + '?access_key=' + settings.IPSTACK_KEY
         r = requests.get(send_url)
         j = json.loads(r.text)
         region_name = j.get("region_name")
 
         if region_name:
-            dict = {
+            region_translations = {
                 "Seoul": "서울특별시",
                 "Gyeonggi-do": "경기도",
                 "Busan": "부산광역시",
@@ -59,18 +58,17 @@ def get_weather_data(adress):
                 "이어도": "이어도",
                 "Gangwon-do": "강원특별자치도"
             }
-            if region_name in dict:
-                adress = dict.get(region_name, region_name)  # Default to original if not found in dict
+            if region_name in region_translations:
+                address = region_translations.get(region_name, region_name)  # Default to original if not found in dict
                 file = os.path.join(settings.BASE_DIR, "static", "data", "nx_ny.csv")
-                df = pd.read_excel(file, engine="openpyxl")
-                adress_value = df.loc[(df["1단계"] == adress) | (df["2단계"] == adress) | (df["3단계"] == adress)]
-                nx_ny = adress_value[["격자 X", "격자 Y"]]
+                df = pd.read_excel(file, engine="openpyxl", usecols=["1단계", "2단계", "3단계", "격자 X", "격자 Y"])
+                address_value = df.loc[(df["1단계"] == address) | (df["2단계"] == address) | (df["3단계"] == address)]
+                nx_ny = address_value[["격자 X", "격자 Y"]]
                 nx_ny = nx_ny.values.tolist()
                 nx_ny = nx_ny[0]
 
-                keys = settings.WEATHER_API_KEY
                 url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst'
-                params = {'serviceKey': keys,
+                params = {'serviceKey': settings.WEATHER_API_KEY,
                         'pageNo': '1',
                         'numOfRows': '1000',
                         'dataType': 'XML',
@@ -116,7 +114,7 @@ def get_weather_data(adress):
 
                 return {
                     'date': current_date,
-                    'location': adress,
+                    'location': address,
                     'status': weather_status,
                     'icon' : os.path.join(settings.BASE_DIR, "static", "weather_image", weather_status + ".png"),
                     'temperature': weather_data['tmp'],
@@ -129,7 +127,7 @@ def get_weather_data(adress):
                 weather_response = requests.get(weather_url)
                 weather_data = json.loads(weather_response.text)
 
-                adress = weather_data['location']['region']
+                address = weather_data['location']['region']
 
                 weather_date = weather_data['location']['localtime'].split(' ')[0]
                 weather_location = f"{weather_data['location']['name']}, {weather_data['location']['region']}, {weather_data['location']['country']}"
@@ -150,5 +148,12 @@ def get_weather_data(adress):
                     'humidity': humidity
                 }
 
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request error: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        logging.error(f"JSON Decode error: {e}")
+        return None
     except Exception as e:
+        logging.error(f"An error occurred: {e}")
         return None

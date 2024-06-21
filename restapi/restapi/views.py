@@ -46,9 +46,12 @@ def clean_up_directory(directory, keep_file):
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except Exception as e:
-            logger.error(f'Failed to delete {file_path}. Reason: {e}')
+            logger.error(f'Failed to delete {file_path}. Reason: {e}', exc_info=True)  # 예외 정보 추가
 
 class ProcessVideoUpload(View):
+    def __init__(self):
+        self.executor = ThreadPoolExecutor(max_workers=2)  # executor를 인스턴스 변수로 초기화
+
     async def post(self, request):
         # 현재 실행 중인 이벤트 루프를 가져오거나 없으면 새로 만듭니다.
         loop = asyncio.get_event_loop()
@@ -76,8 +79,7 @@ class ProcessVideoUpload(View):
         completed_tasks = await asyncio.gather(*tasks)
 
         # ThreadPoolExecutor를 사용하여 비디오 프레임 처리를 별도의 스레드에서 실행합니다.
-        executor = ThreadPoolExecutor(max_workers=2)
-        executor.submit(self.run_process_video_frames, f'{STATICFILES_DIRS}/tmp/{username}/{self.random_filename}', self.random_filename, username)
+        self.executor.submit(self.run_process_video_frames, f'{STATICFILES_DIRS[0]}/tmp/{username}/{self.random_filename}', self.random_filename, username)
 
         # 응답을 즉시 반환합니다. 프레임 처리는 백그라운드에서 계속 진행됩니다.
         response_data = {
@@ -90,7 +92,7 @@ class ProcessVideoUpload(View):
 
     async def handle_video_file(self, video_file, username):
         self.random_filename = f"{uuid.uuid4()}{os.path.splitext(video_file.name)[1]}"  # 확장자를 유지하면서 랜덤한 파일 이름 생성
-        user_dir = f'{STATICFILES_DIRS}/tmp/{username}/{self.random_filename}'
+        user_dir = f'{STATICFILES_DIRS[0]}/tmp/{username}/{self.random_filename}'
         os.makedirs(user_dir, exist_ok=True)  # 디렉토리가 이미 존재해도 오류를 발생시키지 않음
         file_path = f'{user_dir}/{self.random_filename}'
         async with aiofiles.open(file_path, 'wb+') as f:
@@ -131,6 +133,8 @@ class ProcessVideoUpload(View):
             new_loop.run_until_complete(self.process_video_frames(path, filename, username))
         finally:
             new_loop.close()
+            if self.executor:
+                self.executor.shutdown(wait=True)  # Executor를 안전하게 종료
 
     async def process_video_frames(self, user_dir, filename, username):
         try:
@@ -275,10 +279,7 @@ def v1_weather_api(request):
     api_key = request.headers.get('X-API-KEY')
     ip_address = request.headers.get('X-IP-ADDRESS')
 
-    try:
-        # APIKey 모델에서 제공된 API 키가 유효한지 확인
-        APIKey.objects.get(key=api_key)
-    except APIKey.DoesNotExist:
+    if not api_key or not APIKey.objects.filter(key=api_key).exists():
         return JsonResponse({'error': 'Invalid API key'}, status=401)
 
     # IP 주소를 사용하여 날씨 데이터 가져오기

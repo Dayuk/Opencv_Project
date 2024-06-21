@@ -3,6 +3,7 @@ import numpy as np
 import os
 import uuid
 from .settings import MODEL, STATICFILES_DIRS
+from django.http import JsonResponse
 
 def process_image(image, username):
     # 이미지를 모델에 맞는 형태로 변환
@@ -17,7 +18,7 @@ def process_image(image, username):
             cv2.putText(img, f'{label} {conf:.2f}', (int(xyxy[0]), int(xyxy[1])-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # 사용자별 디렉토리 생성
-    output_dir = f'{STATICFILES_DIRS}/tmp/{username}'
+    output_dir = f'{STATICFILES_DIRS[0]}/tmp/{username}'
     os.makedirs(output_dir, exist_ok=True)
 
     # 랜덤 파일명 생성
@@ -27,4 +28,4 @@ def process_image(image, username):
     # 이미지를 PNG로 저장
     cv2.imwrite(output_image_path, img)
 
-    return output_image_path
+    return JsonResponse({'output_image_path' : output_image_path})

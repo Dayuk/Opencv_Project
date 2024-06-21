@@ -91,9 +91,8 @@ button:hover {
     color: #fff;
     border-radius: 4px;
     border: none;
-    padding: 10px;
-    min-width: 200px;
-    min-height: 230px;
+    min-width: 400px;
+    height: 100%;
     resize: none;
 }
 #code {

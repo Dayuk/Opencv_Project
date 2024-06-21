@@ -3,6 +3,10 @@
 {% block content %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/myapi.css' %}">
+<script>
+    // CSRF 토큰을 JavaScript 변수로 저장
+    var csrftoken = '{{ csrf_token }}';
+</script>
 
 <div class="api-management">
     <h2>API document</h2>
@@ -82,8 +86,8 @@
             'Content-Type': 'application/json',
             'X-API-KEY': 'your_api_key_here',
             'X-YOUTUBE-LINK': 'youtube_link_here',
-            'X-YOUTUBE-STARTTIME-SECONDS': 'youtube_starttime_here[ex: 360]',
-            'X-YOUTUBE-ENDTIME-SECONDS': 'youtube_endtime_here[ex: 420]'
+            'X-YOUTUBE-STARTTIME-SECONDS': 'youtube_starttime_here',
+            'X-YOUTUBE-ENDTIME-SECONDS': 'youtube_endtime_here'
         }
     }
                 </code>
@@ -160,31 +164,35 @@
     });
 
     function sendApiRequest(apiNum) {
+        let method, endpoint, headers;
         if (apiNum == 1) {
-            const method = 'POST';
-            const endpoint = '/api/v1/weather/';
-            const headers = {
+            method = 'POST';
+            endpoint = '/api/v1/weather/';
+            headers = {
                 'Content-Type': 'application/json',
                 'X-API-KEY': document.getElementById('apiKeyDisplay').textContent,
-                'X-IP-ADDRESS': document.getElementById('X-IP-ADDRESS').value
+                'X-IP-ADDRESS': document.getElementById('X-IP-ADDRESS').value,
+                'X-CSRFToken': csrftoken  // CSRF 토큰 추가
             };
         }
         else if (apiNum == 2) {
-            const method = 'PUT';
-            const endpoint = '/api/v1/car_recognition/image/';
-            const headers = {
+            method = 'PUT';
+            endpoint = '/api/v1/car_recognition/image/';
+            headers = {
                 'Content-Type': 'application/json',
                 'X-API-KEY': document.getElementById('apiKeyDisplay').textContent,
-                'X-BASE64-INCODE-IMAGE': document.getElementById('X-BASE64-INCODE-IMAGE').value
+                'X-BASE64-INCODE-IMAGE': document.getElementById('X-BASE64-INCODE-IMAGE').value,
+                'X-CSRFToken': csrftoken  // CSRF 토큰 추가
             };
         }
         else if (apiNum == 3){
-            const method = 'POST';
-            const endpoint = '/api/v1/car_recognition/youtube/';
-            const headers = {
+            method = 'POST';
+            endpoint = '/api/v1/car_recognition/youtube/';
+            headers = {
                 'Content-Type': 'application/json',
                 'X-API-KEY': document.getElementById('apiKeyDisplay').textContent,
                 'X-YOUTUBE-LINK': document.getElementById('X-YOUTUBE-LINK').value,
+                'X-CSRFToken': csrftoken  // CSRF 토큰 추가
             };
         }
         else {
@@ -193,14 +201,20 @@
         }
         fetch(endpoint, {
             method: method,
-            headers: headers
+            headers: headers,
+            credentials: 'include'  // 쿠키를 포함시키기 위해 credentials 옵션 추가
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             document.getElementById('apiLog_'+apiNum).value += JSON.stringify(data, null, 2) + "\n\n"; // 로그 브라우저에 결과 추가
         })
         .catch(error => {
-            document.getElementById('apiLog_'+apiNum).value += '405 Bad Request : Invalid HTTP method\n\n'; // 로그 브라우저에 에러 메시지 추가
+            document.getElementById('apiLog_'+apiNum).value += 'Error: ' + error.message + '\n\n'; // 로그 브라우저에 에러 메시지 추가
         });
     }
 </script>

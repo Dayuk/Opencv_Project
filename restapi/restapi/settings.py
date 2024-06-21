@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 import warnings
 from django.utils.deprecation import RemovedInDjango50Warning
@@ -19,7 +18,7 @@ warnings.filterwarnings(
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Set HSTS (HTTP Strict Transport Security)
+# # Set HSTS (HTTP Strict Transport Security)
 # SECURE_HSTS_SECONDS = 31536000  # 1 year
 # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 # SECURE_HSTS_PRELOAD = True
